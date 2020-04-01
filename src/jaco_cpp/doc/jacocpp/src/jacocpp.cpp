@@ -133,6 +133,31 @@ class Movements{
     //EXECUTE TRAJECTORY
     move_group.move();
   }
+  void grasptip(float radian){
+    static const std::string PLANNING_GROUP = "grippertip";
+
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+    moveit::planning_interface::MoveGroupInterface::Plan planGrasp;
+    moveit::core::RobotStatePtr current_state = move_group.getCurrentState();
+
+    std::vector<double> joint_group_positions;
+    current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
+
+    //Joint angles for the three main finger joints
+    joint_group_positions[0] = radian;
+    joint_group_positions[1] = radian;
+    joint_group_positions[2] = radian;
+    move_group.setJointValueTarget(joint_group_positions);
+
+    bool success = (move_group.plan(planGrasp) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+    //EXECUTE TRAJECTORY
+    move_group.move();
+  }
 };
 
 
@@ -149,13 +174,18 @@ int main(int argc, char** argv)
   M.moveHome();
   ros::Duration(7).sleep(); //Give time to complete movement
 
-  M.cartesianPlan("arm", 0.5, 0.5, 0.5, 1.0); //Move group "arm" to X = 0.5, Y = 0.5, Z = 0.5 with orientation = 1.0
-  ros::Duration(7).sleep(); //Give time to complete movement
+  //M.cartesianPlan("arm", 0.5, 0.5, 0.5, 1.0); //Move group "arm" to X = 0.5, Y = 0.5, Z = 0.5 with orientation = 1.0
+  //ros::Duration(7).sleep(); //Give time to complete movement
+  M.grasp(-1.0);
+  ros::Duration(3).sleep();
+  M.grasp(1.0);
+  ros::Duration(3).sleep();
+  M.grasptip(0.6);
+  ros::Duration(3).sleep(); //Give time to complete movement
+  M.grasptip(-0.6);
+  ros::Duration(3).sleep(); //Give time to complete movement
 
-  M.grasp(1.0);  //Grasp with 1.0 radian closing (-1.0 would open)
-  ros::Duration(7).sleep(); //Give time to complete movement
-
-  M.moveHome();
+  //M.moveHome();
 
   ros::shutdown();
   return 0;
