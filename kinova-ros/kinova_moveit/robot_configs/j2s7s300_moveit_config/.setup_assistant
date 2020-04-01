@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: kinova_description
+    relative_path: urdf/j2s7s300_standalone.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/j2s7s300.srdf
+  CONFIG:
+    author_name: valdas
+    author_email: valdas@valdas.com
+    generated_timestamp: 1585751801
