@@ -7,6 +7,8 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
+const double d2r = 0.01745329251; //Convert from degree to radian
+
 class Movements{
   public:
     void moveHome(){
@@ -24,13 +26,13 @@ class Movements{
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
       //Joint angles for the three main finger joints
-      joint_group_positions[0] = 0;
-      joint_group_positions[1] = 3.1;
-      joint_group_positions[2] = 0;
-      joint_group_positions[3] = 1.5;
-      joint_group_positions[4] = 0;
-      joint_group_positions[5] = 4.6;
-      joint_group_positions[6] = 0;
+      joint_group_positions[0] = 0 * d2r;
+      joint_group_positions[1] = 180 * d2r;
+      joint_group_positions[2] = 0 * d2r;
+      joint_group_positions[3] = 90 * d2r;
+      joint_group_positions[4] = 180 * d2r;
+      joint_group_positions[5] = 90 * d2r;
+      joint_group_positions[6] = 0 * d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
       bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -173,10 +175,11 @@ int main(int argc, char** argv)
   M.grasptip(0);
   M.grasp(0);
 
-  //Move to point and grasp from above
+  //Move to point and grasp from above and flip
   M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 1.0, 0.0);
   M.grasptip(0.5);
   M.grasp(0.8);
+  M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 0.5, 0.0);
 
   //Home setting
   M.moveHome();
