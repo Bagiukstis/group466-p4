@@ -9,8 +9,46 @@
 
 const double d2r = 0.01745329251; //Convert from degree to radian
 
-class Movements{
+//Bottle position
+float b_x = -0.6;
+float b_y = -0.3;
+float b_z = 0.6;
+
+//Cup position
+float c_x = -0.6;
+float c_y = 0.3;
+float c_z = 0.6;
+
+class JacoControl{
   public:
+    void moveSleep(){
+      static const std::string PLANNING_GROUP = "arm";
+
+      moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+      moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+      const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+      moveit::planning_interface::MoveGroupInterface::Plan planHome;
+      moveit::core::RobotStatePtr current_state = move_group.getCurrentState();
+
+      std::vector<double> joint_group_positions;
+      current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
+
+      joint_group_positions[0] = 0 * d2r;
+      joint_group_positions[1] = 120 * d2r;
+      joint_group_positions[2] = 0 * d2r;
+      joint_group_positions[3] = 30 * d2r;
+      joint_group_positions[4] = 0 * d2r;
+      joint_group_positions[5] = 220 * d2r;
+      joint_group_positions[6] = 0 * d2r;
+      move_group.setJointValueTarget(joint_group_positions);
+
+      bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+      move_group.move();
+    }
+
     void moveHome(){
       static const std::string PLANNING_GROUP = "arm";
 
@@ -25,13 +63,12 @@ class Movements{
       std::vector<double> joint_group_positions;
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
-      //Joint angles for the three main finger joints
       joint_group_positions[0] = 0 * d2r;
       joint_group_positions[1] = 180 * d2r;
       joint_group_positions[2] = 0 * d2r;
       joint_group_positions[3] = 90 * d2r;
-      joint_group_positions[4] = 180 * d2r;
-      joint_group_positions[5] = 90 * d2r;
+      joint_group_positions[4] = 0 * d2r;
+      joint_group_positions[5] = 180 * d2r;
       joint_group_positions[6] = 0 * d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
@@ -41,8 +78,7 @@ class Movements{
       move_group.move();
     }
 
-
-  void jointPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori){
+  void jointPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = movement_group;
 
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
@@ -55,6 +91,7 @@ class Movements{
     goal_pose.orientation.x = x_ori;
     goal_pose.orientation.y = y_ori;
     goal_pose.orientation.z = z_ori;
+    goal_pose.orientation.w = w_ori;
     goal_pose.position.x = x_pos;
     goal_pose.position.y = y_pos;
     goal_pose.position.z = z_pos;
@@ -68,8 +105,7 @@ class Movements{
     move_group.move();
   }
 
-
-  void cartesianPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori){
+  void cartesianPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = movement_group;
 
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
@@ -85,6 +121,7 @@ class Movements{
     goal_pose.orientation.x = x_ori;
     goal_pose.orientation.y = y_ori;
     goal_pose.orientation.z = z_ori;
+    goal_pose.orientation.w = w_ori;
     goal_pose.position.x = x_pos;
     goal_pose.position.y = y_pos;
     goal_pose.position.z = z_pos;
@@ -101,10 +138,14 @@ class Movements{
     const double eef_step = 0.01;
     double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
 
-    //EXECUTE TRAJECTORY
-    move_group.move();
-  }
+    moveit::planning_interface::MoveGroupInterface::Plan planCartesian;
 
+    planCartesian.trajectory_= trajectory;
+
+    ros::Duration(5).sleep();
+
+    move_group.execute(planCartesian);
+  }
 
   void grasp(float radian){
     static const std::string PLANNING_GROUP = "gripper";
@@ -132,7 +173,6 @@ class Movements{
     move_group.move();
   }
 
-
   void grasptip(float radian){
     static const std::string PLANNING_GROUP = "grippertip";
 
@@ -158,7 +198,8 @@ class Movements{
     //EXECUTE TRAJECTORY
     move_group.move();
   }
-  void createobj(std::string objects, int id, float x_position, float y_position, float z_position, float x_dimension, float y_dimension, float z_dimension){
+
+  void createObject(std::string type, int id, float x_pos, float y_pos, float z_pos, float x_dim, float y_dim, float z_dim, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = "gripper";
     moveit_msgs::CollisionObject collision_object;
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -183,29 +224,32 @@ class Movements{
   } */
 
     shape_msgs::SolidPrimitive primitive;
-    if (objects == "Cylinder"){
+    if (type == "Cylinder"){
       primitive.type = primitive.CYLINDER;
     }
-    if (objects == "Box"){
+    if (type == "Box"){
       primitive.type = primitive.BOX;
     }
-    if (objects == "Sphere"){
+    if (type == "Sphere"){
       primitive.type = primitive.SPHERE;
     }
-    if (objects == "Cone"){
+    if (type == "Cone"){
       primitive.type = primitive.CONE;
     }
 
     primitive.dimensions.resize(3);
-    primitive.dimensions[0] = x_dimension;
-    primitive.dimensions[1] = y_dimension;
-    primitive.dimensions[2] = z_dimension;
+    primitive.dimensions[0] = x_dim;
+    primitive.dimensions[1] = y_dim;
+    primitive.dimensions[2] = z_dim;
 
     geometry_msgs::Pose figure_pose;
-    figure_pose.orientation.w = 1.0;
-    figure_pose.position.x = x_position;
-    figure_pose.position.y = y_position;
-    figure_pose.position.z = z_position;
+    figure_pose.orientation.w = w_ori;
+    figure_pose.orientation.x = x_ori;
+    figure_pose.orientation.y = y_ori;
+    figure_pose.orientation.z = z_ori;
+    figure_pose.position.x = x_pos;
+    figure_pose.position.y = y_pos;
+    figure_pose.position.z = z_pos;
 
     collision_object.primitives.push_back(primitive);
     collision_object.primitive_poses.push_back(figure_pose);
@@ -218,100 +262,95 @@ class Movements{
 
     planning_scene_interface.addCollisionObjects(collision_objects);
 
-    sleep(2.0);
-    move_group.setPlanningTime(10.0);
+    sleep(0.5);
+    //move_group.setPlanningTime(10.0);
   }
-void removeobj(int id){
-  static const std::string PLANNING_GROUP = "gripper";
-  moveit_msgs::CollisionObject collision_object;
-  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-  collision_object.header.frame_id = move_group.getPlanningFrame();
-  if (id == 1){
-  collision_object.id = "Object1";
-  }
-  else if (id == 2){
-  collision_object.id = "Object2";
-  }
-  std::vector<std::string> object_ids;
-  object_ids.push_back(collision_object.id);
-  planning_scene_interface.removeCollisionObjects(object_ids);
-  /* Sleep to give Rviz time to show the object is no longer there. */
-  sleep(4.0);
-}
-void attachobj(int id){
-  static const std::string PLANNING_GROUP = "gripper";
-  moveit_msgs::CollisionObject collision_object;
-  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-  collision_object.header.frame_id = move_group.getPlanningFrame();
-  if (id == 1){
-  collision_object.id = "Object1";
-  move_group.attachObject(collision_object.id);
-  }
-  else if (id == 2){
-  collision_object.id = "Object2";
-  move_group.attachObject(collision_object.id);
-  }
-  sleep(5.0);
-}
-void deattachobj(int id){
-  static const std::string PLANNING_GROUP = "gripper";
-  moveit_msgs::CollisionObject collision_object;
-  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-  collision_object.header.frame_id = move_group.getPlanningFrame();
-  if (id == 1){
-  collision_object.id = "Object1";
-  move_group.detachObject(collision_object.id);
-  }
-  else if (id == 2){
-  collision_object.id = "Object2";
-  move_group.detachObject(collision_object.id);
-  }
-  sleep(5.0);
-}
-void complete(){
-  moveHome();
 
-  jointPlan("arm", 0.4, 0.2, 0.2, 0.0, 1.0, 0.0);
-  grasptip(0);
-  grasp(0);
-  sleep(2.0);
-//  M.createobj("Cylinder",1, 0.4, 0.2, 0.2, 0.2, 0.03, 0.1); //Collision
-  createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.2, 0.03, 0.1);  //full motion
-  //M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1); //Full motion + collision
+  void removeObject(int id){
+    static const std::string PLANNING_GROUP = "gripper";
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit_msgs::CollisionObject collision_object;
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    collision_object.header.frame_id = move_group.getPlanningFrame();
+    if (id == 1){
+      collision_object.id = "Object1";
+    }
+    else if (id == 2){
+      collision_object.id = "Object2";
+    }
+    std::vector<std::string> object_ids;
+    object_ids.push_back(collision_object.id);
+    planning_scene_interface.removeCollisionObjects(object_ids);
+    /* Sleep to give Rviz time to show the object is no longer there. */
+    sleep(0.5);
+  }
 
-  grasptip(0.8);
-  grasp(0.6);
-  attachobj(1);
+  void attachObject(int id){
+    static const std::string PLANNING_GROUP = "gripper";
+    moveit_msgs::CollisionObject collision_object;
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    collision_object.header.frame_id = move_group.getPlanningFrame();
+    if (id == 1){
+    collision_object.id = "Object1";
+    move_group.attachObject(collision_object.id);
+    }
+    else if (id == 2){
+    collision_object.id = "Object2";
+    move_group.attachObject(collision_object.id);
+    }
+    sleep(5.0);
+  }
 
-  moveHome();
-  grasptip(0);
-  grasp(0);
-  deattachobj(1);
+  void detachObject(int id){
+    static const std::string PLANNING_GROUP = "gripper";
+    moveit_msgs::CollisionObject collision_object;
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    collision_object.header.frame_id = move_group.getPlanningFrame();
+    if (id == 1){
+    collision_object.id = "Object1";
+    move_group.detachObject(collision_object.id);
+    }
+    else if (id == 2){
+    collision_object.id = "Object2";
+    move_group.detachObject(collision_object.id);
+    }
+    sleep(5.0);
+  }
 
-  jointPlan("arm", 0.5, 0.4, 0.3, 0.0, 1.0, 0.0);
-  grasptip(0);
-  grasp(0);
-  sleep(2.0);
-  createobj("Cylinder",2, 0.5, 0.4, 0.2, 0.2, 0.03, 0.1);
-  grasptip(0.8);
-  grasp(0.6);
-  attachobj(2);
-  jointPlan("arm", 0.4, 0.3, 0.3, 0.0, 1.0, 0.0);
-  grasptip(0);
-  grasp(0);
-  deattachobj(2);
-  moveHome();
-  /*M.createobj("Cone",3, 0.1, 0.2, 0.4, 0.7, 0.2, 0.4);
-  M.createobj("Sphere",4, 0.3, 0.1, 0.2, 0.8, 0.6, 0.5);
-  M.createobj("Box",5, 0.3, 0.1, 0.2, 0.1, 0.7, 0.6);*/
+  void gripperConstraints(float x_ori, float y_ori, float z_ori, float w_ori){
+    static const std::string PLANNING_GROUP = "arm";
 
-  removeobj(1);
-  removeobj(2);
-}
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
+    const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+    moveit_msgs::OrientationConstraint ocm;
+    ocm.link_name = "gripper";
+    ocm.header.frame_id = "arm";
+    ocm.orientation.x = x_ori;
+    ocm.orientation.y = y_ori;
+    ocm.orientation.z = z_ori;
+    ocm.orientation.w = w_ori;
+    ocm.weight = 1.0;
+
+    moveit_msgs::Constraints constraints;
+    constraints.orientation_constraints.push_back(ocm);
+    move_group.setPathConstraints(constraints);
+
+    //move_group.setPlanningTime(10.0);
+  }
+
+  void clearConstraints(){
+    static const std::string PLANNING_GROUP = "gripper";
+
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    move_group.clearPathConstraints();
+  }
 };
 
 
@@ -322,43 +361,61 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  Movements M;
-  M.complete();
-//  M.complete(); //Little test
+  JacoControl JC;
 
+  // /* COMPLETE SIMULTATION TEST
 
- //Home setting
-/*  M.moveHome();
-  M.grasptip(0);
-  M.grasp(0); */
+  //Go from sleep to home
+  JC.moveSleep();
+  ros::Duration(2).sleep();
 
-  //Move to point and grasp from above and flip
-  //createobj() orientation is set to default value (1). It can be changed by adjusting the function making orientation different for XYZ separately.
-  //createobj() 1- Figure , 2- ID, 3:5 - XYZ, 6:8 - Dimensions
+  //Spawn Bottle
+  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  ros::Duration(2).sleep();
+  //Spawn Cup
+  JC.createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+  ros::Duration(2).sleep();
 
-//  M.jointPlan("arm", 0.4, 0.2, 0.2, 0.0, 1.0, 0.0);
-  //  M.createobj("Cylinder",1, 0.4, 0.2, 0.2, 0.2, 0.03, 0.1); //Collision
-//  M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.2, 0.03, 0.1);  //Full motion no collision
+  //Move Cartesian to bottle
+  JC.cartesianPlan("arm", b_x, b_y, b_z, -0.5, -0.5, 0.5, 0.5);
 
-  //M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1); //Full motion with collision
-  //M.createobj("Cylinder",2, 0.3, 0.1, 0.2, 0.5, 0.1, 0.3); // Function to spawn second Cylinder
+  //Close gripper and tips
+  JC.grasptip(0.5);
+  JC.grasp(0.5);
 
-/*
-  M.grasptip(0.8); //Grasp tip and grasp ratios needs to be adjusted manually to avoid collision
-  M.grasp(0.6);
-  M.attachobj(1); // Attaching object with ID 1
+  //Attach bottle to gripper
+  JC.attachObject(1);
 
-  M.moveHome();
-  M.grasptip(0);
-  M.grasp(0);
-  M.deattachobj(1); //Deattaching object with ID 1
+  //Add constraints to gripper to avoid spills on Cartesian path to cup
+  JC.gripperConstraints(-0.5, -0.5, 0.5, 0.5);
+  //Lift bottle 30 cm up from table
+  JC.cartesianPlan("arm", b_x, b_y, b_z+0.3, -0.5, -0.5, 0.5, 0.5);
+  //Move bottle 10 cm above and to the left of cup
+  JC.cartesianPlan("arm", c_x, c_y-0.1, c_z+0.1, -0.5, -0.5, 0.5, 0.5);
+  //Clear constraints to allow pouring
+  JC.clearConstraints();
 
+  //Turn gripper to pour
+  JC.cartesianPlan("arm", c_x, c_y-0.1, c_z+0.1, -0.71, 0, 0.71, 0.0);
+  ros::Duration(3).sleep();
 
-  M.removeobj(1); //Removing object with ID 1 from RViz
-//  M.removeobj(2);
+  //Replace bottle on table
+  JC.cartesianPlan("arm", b_x, b_y, b_z+0.3, -0.5, -0.5, 0.5, 0.5);
+  JC.cartesianPlan("arm", b_x, b_y, b_z, -0.5, -0.5, 0.5, 0.5);
 
-*/
-  //M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 0.5, 0.0);
+  //Release grip
+  JC.grasp(0.0);
+  JC.grasptip(0.0);
+
+  //Detach bottle from gripper
+  JC.detachObject(1);
+
+  //Remove bottle and cup from simulation
+  JC.removeObject(1);
+  JC.removeObject(2);
+
+  // */
+
   ros::shutdown();
   return 0;
 }
