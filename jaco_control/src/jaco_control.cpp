@@ -158,6 +158,160 @@ class Movements{
     //EXECUTE TRAJECTORY
     move_group.move();
   }
+  void createobj(std::string objects, int id, float x_position, float y_position, float z_position, float x_dimension, float y_dimension, float z_dimension){
+    static const std::string PLANNING_GROUP = "gripper";
+    moveit_msgs::CollisionObject collision_object;
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    collision_object.header.frame_id = move_group.getPlanningFrame();
+
+    if (id == 1){
+    collision_object.id = "Object1";
+    }
+    else if (id == 2){
+    collision_object.id = "Object2";
+    }
+
+  /*  else if (id == 3){
+    collision_object.id = "Object4";
+    }
+    else if (id == 4){
+    collision_object.id = "Object5";
+    }
+    else if (id == 5){
+    collision_object.id = "Object6";
+  } */
+
+    shape_msgs::SolidPrimitive primitive;
+    if (objects == "Cylinder"){
+      primitive.type = primitive.CYLINDER;
+    }
+    if (objects == "Box"){
+      primitive.type = primitive.BOX;
+    }
+    if (objects == "Sphere"){
+      primitive.type = primitive.SPHERE;
+    }
+    if (objects == "Cone"){
+      primitive.type = primitive.CONE;
+    }
+
+    primitive.dimensions.resize(3);
+    primitive.dimensions[0] = x_dimension;
+    primitive.dimensions[1] = y_dimension;
+    primitive.dimensions[2] = z_dimension;
+
+    geometry_msgs::Pose figure_pose;
+    figure_pose.orientation.w = 1.0;
+    figure_pose.position.x = x_position;
+    figure_pose.position.y = y_position;
+    figure_pose.position.z = z_position;
+
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(figure_pose);
+    collision_object.operation = collision_object.ADD;
+
+    std::vector<moveit_msgs::CollisionObject> collision_objects;
+    collision_objects.push_back(collision_object);
+
+    ROS_INFO("Add an object into the world!");
+
+    planning_scene_interface.addCollisionObjects(collision_objects);
+
+    sleep(2.0);
+    move_group.setPlanningTime(10.0);
+  }
+void removeobj(int id){
+  static const std::string PLANNING_GROUP = "gripper";
+  moveit_msgs::CollisionObject collision_object;
+  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+  collision_object.header.frame_id = move_group.getPlanningFrame();
+  if (id == 1){
+  collision_object.id = "Object1";
+  }
+  else if (id == 2){
+  collision_object.id = "Object2";
+  }
+  std::vector<std::string> object_ids;
+  object_ids.push_back(collision_object.id);
+  planning_scene_interface.removeCollisionObjects(object_ids);
+  /* Sleep to give Rviz time to show the object is no longer there. */
+  sleep(4.0);
+}
+void attachobj(int id){
+  static const std::string PLANNING_GROUP = "gripper";
+  moveit_msgs::CollisionObject collision_object;
+  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+  collision_object.header.frame_id = move_group.getPlanningFrame();
+  if (id == 1){
+  collision_object.id = "Object1";
+  move_group.attachObject(collision_object.id);
+  }
+  else if (id == 2){
+  collision_object.id = "Object2";
+  move_group.attachObject(collision_object.id);
+  }
+  sleep(5.0);
+}
+void deattachobj(int id){
+  static const std::string PLANNING_GROUP = "gripper";
+  moveit_msgs::CollisionObject collision_object;
+  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+  collision_object.header.frame_id = move_group.getPlanningFrame();
+  if (id == 1){
+  collision_object.id = "Object1";
+  move_group.detachObject(collision_object.id);
+  }
+  else if (id == 2){
+  collision_object.id = "Object2";
+  move_group.detachObject(collision_object.id);
+  }
+  sleep(5.0);
+}
+void complete(){
+  moveHome();
+
+  jointPlan("arm", 0.4, 0.2, 0.2, 0.0, 1.0, 0.0);
+  grasptip(0);
+  grasp(0);
+  sleep(2.0);
+//  M.createobj("Cylinder",1, 0.4, 0.2, 0.2, 0.2, 0.03, 0.1); //Collision
+  createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.2, 0.03, 0.1);  //full motion
+  //M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1); //Full motion + collision
+
+  grasptip(0.8);
+  grasp(0.6);
+  attachobj(1);
+
+  moveHome();
+  grasptip(0);
+  grasp(0);
+  deattachobj(1);
+
+  jointPlan("arm", 0.5, 0.4, 0.3, 0.0, 1.0, 0.0);
+  grasptip(0);
+  grasp(0);
+  sleep(2.0);
+  createobj("Cylinder",2, 0.5, 0.4, 0.2, 0.2, 0.03, 0.1);
+  grasptip(0.8);
+  grasp(0.6);
+  attachobj(2);
+  jointPlan("arm", 0.4, 0.3, 0.3, 0.0, 1.0, 0.0);
+  grasptip(0);
+  grasp(0);
+  deattachobj(2);
+  moveHome();
+  /*M.createobj("Cone",3, 0.1, 0.2, 0.4, 0.7, 0.2, 0.4);
+  M.createobj("Sphere",4, 0.3, 0.1, 0.2, 0.8, 0.6, 0.5);
+  M.createobj("Box",5, 0.3, 0.1, 0.2, 0.1, 0.7, 0.6);*/
+
+  removeobj(1);
+  removeobj(2);
+}
+
 };
 
 
@@ -169,24 +323,42 @@ int main(int argc, char** argv)
   spinner.start();
 
   Movements M;
+  M.complete();
+//  M.complete(); //Little test
 
-  //Home setting
-  M.moveHome();
+
+ //Home setting
+/*  M.moveHome();
   M.grasptip(0);
-  M.grasp(0);
+  M.grasp(0); */
 
   //Move to point and grasp from above and flip
-  M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 1.0, 0.0);
-  M.grasptip(0.5);
-  M.grasp(0.8);
-  M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 0.5, 0.0);
+  //createobj() orientation is set to default value (1). It can be changed by adjusting the function making orientation different for XYZ separately.
+  //createobj() 1- Figure , 2- ID, 3:5 - XYZ, 6:8 - Dimensions
 
-  //Home setting
+//  M.jointPlan("arm", 0.4, 0.2, 0.2, 0.0, 1.0, 0.0);
+  //  M.createobj("Cylinder",1, 0.4, 0.2, 0.2, 0.2, 0.03, 0.1); //Collision
+//  M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.2, 0.03, 0.1);  //Full motion no collision
+
+  //M.createobj("Cylinder",1, 0.4, 0.2, 0.1, 0.1, 0.1, 0.1); //Full motion with collision
+  //M.createobj("Cylinder",2, 0.3, 0.1, 0.2, 0.5, 0.1, 0.3); // Function to spawn second Cylinder
+
+/*
+  M.grasptip(0.8); //Grasp tip and grasp ratios needs to be adjusted manually to avoid collision
+  M.grasp(0.6);
+  M.attachobj(1); // Attaching object with ID 1
+
   M.moveHome();
   M.grasptip(0);
   M.grasp(0);
+  M.deattachobj(1); //Deattaching object with ID 1
 
-  //Exit
+
+  M.removeobj(1); //Removing object with ID 1 from RViz
+//  M.removeobj(2);
+
+*/
+  //M.jointPlan("arm", 0.4, 0.0, 0.5, 0.0, 0.5, 0.0);
   ros::shutdown();
   return 0;
 }
