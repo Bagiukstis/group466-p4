@@ -401,11 +401,13 @@ class JacoControl{
     q_z = cr * cp * sy - sr * sp * cy;
   }
 
-  void pourBottleAt(float x_pos, float y_pos, float z_pos){ //Relies on angle from orientGraspVertical function, so run that one first
+  void pourBottleAt(float x_pos, float y_pos, float z_pos){
+    ang = atan2(y_pos,x_pos);
+    
     float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
     float ang2 = atan2(0.1,hyp);
-    float full_ang = ang + ang2 + (90*d2r);
+    float full_ang = ang + ang2;
     float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
 
     pour_x = hyp2 * cos(full_ang);
