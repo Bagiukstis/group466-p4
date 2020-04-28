@@ -14,7 +14,6 @@ float q_w;
 float q_x;
 float q_y;
 float q_z;
-float ang;
 
 float pour_x, pour_y, pour_z;
 float retr_x, retr_y, retr_z;
@@ -355,7 +354,7 @@ class JacoControl{
   }
 
   void orientGraspHorizontal(float x_pos, float y_pos){
-    ang = atan2(y_pos,x_pos)-(90*d2r);
+    float ang = atan2(y_pos,x_pos)-(90*d2r);
 
     float Y = ang;          //YAW = Z
     float P = 1.570796;     //PITCH = Y
@@ -374,25 +373,30 @@ class JacoControl{
     q_z = cr * cp * sy - sr * sp * cy;
   }
 
-  void pourBottleAt(float x_pos, float y_pos, float z_pos){ //Relies on angle from orientGraspVertical function, so run that one first
+  void pourBottleAt(float x_pos, float y_pos, float z_pos){
+    float ang = atan2(y_pos,x_pos)-(90*d2r);
     float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
     float ang2 = atan2(0.1,hyp);
     float full_ang = ang + ang2 + (90*d2r);
     float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
 
-    pour_x = hyp2 * cos(full_ang);
-    pour_y = hyp2 * sin(full_ang);
-    pour_z = z_pos + 0.1;
+    float pour_x = hyp2 * cos(full_ang);
+    float pour_y = hyp2 * sin(full_ang);
+    float pour_z = z_pos + 0.1;
+
+    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
   }
 
   void linearRetract(float x_pos, float y_pos, float z_pos){
-    ang = atan2(y_pos,x_pos);
+    float ang = atan2(y_pos,x_pos);
     float hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
 
     retr_x = hyp * cos(ang);
     retr_y = hyp * sin(ang);
     retr_z = z_pos+0.1;
+
+    cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
   }
 };
 
@@ -413,8 +417,6 @@ int main(int argc, char** argv)
   JC.cartesianPlan(b_x, b_y, b_z, q_x, q_y, q_z, q_w);
 
   JC.linearRetract(b_x, b_y, b_z);
-  JC.cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
-
 
   /*// SIMULATE USER POSITION
   JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
