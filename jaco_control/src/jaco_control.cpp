@@ -14,9 +14,9 @@ float q_w;
 float q_x;
 float q_y;
 float q_z;
-float ang;
 
 float pour_x, pour_y, pour_z;
+float retr_x, retr_y, retr_z;
 
 //Bottle position
 float b_x = -0.6;
@@ -44,12 +44,12 @@ class JacoControl{
       std::vector<double> joint_group_positions;
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
-      joint_group_positions[0] = 0 * d2r;
+      joint_group_positions[0] = -15 * d2r;
       joint_group_positions[1] = 120 * d2r;
       joint_group_positions[2] = 0 * d2r;
       joint_group_positions[3] = 30 * d2r;
       joint_group_positions[4] = 0 * d2r;
-      joint_group_positions[5] = 220 * d2r;
+      joint_group_positions[5] = 210 * d2r;
       joint_group_positions[6] = 0 * d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
@@ -58,34 +58,6 @@ class JacoControl{
       move_group.move();
     }
 
-    void moveHome(){
-      static const std::string PLANNING_GROUP = "arm";
-
-      moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-      moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-
-      const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-
-      moveit::planning_interface::MoveGroupInterface::Plan planHome;
-      moveit::core::RobotStatePtr current_state = move_group.getCurrentState();
-
-      std::vector<double> joint_group_positions;
-      current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
-
-      joint_group_positions[0] = 0 * d2r;
-      joint_group_positions[1] = 180 * d2r;
-      joint_group_positions[2] = 0 * d2r;
-      joint_group_positions[3] = 90 * d2r;
-      joint_group_positions[4] = 0 * d2r;
-      joint_group_positions[5] = 180 * d2r;
-      joint_group_positions[6] = 0 * d2r;
-      move_group.setJointValueTarget(joint_group_positions);
-
-      bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-      //EXECUTE TRAJECTORY
-      move_group.move();
-    }
 
   void jointPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = movement_group;
@@ -114,8 +86,8 @@ class JacoControl{
     move_group.move();
   }
 
-  void cartesianPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
-    static const std::string PLANNING_GROUP = movement_group;
+  void cartesianPlan(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
+    static const std::string PLANNING_GROUP = "arm";
 
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -382,7 +354,7 @@ class JacoControl{
   }
 
   void orientGraspHorizontal(float x_pos, float y_pos){
-    ang = atan2(y_pos,x_pos)-(90*d2r);
+    float ang = atan2(y_pos,x_pos)-(90*d2r);
 
     float Y = ang;          //YAW = Z
     float P = 1.570796;     //PITCH = Y
@@ -402,17 +374,29 @@ class JacoControl{
   }
 
   void pourBottleAt(float x_pos, float y_pos, float z_pos){
-    ang = atan2(y_pos,x_pos);
-    
+    float ang = atan2(y_pos,x_pos)-(90*d2r);
     float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
     float ang2 = atan2(0.1,hyp);
-    float full_ang = ang + ang2;
+    float full_ang = ang + ang2 + (90*d2r);
     float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
 
-    pour_x = hyp2 * cos(full_ang);
-    pour_y = hyp2 * sin(full_ang);
-    pour_z = z_pos + 0.1;
+    float pour_x = hyp2 * cos(full_ang);
+    float pour_y = hyp2 * sin(full_ang);
+    float pour_z = z_pos + 0.1;
+
+    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+  }
+
+  void linearRetract(float x_pos, float y_pos, float z_pos){
+    float ang = atan2(y_pos,x_pos);
+    float hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
+
+    retr_x = hyp * cos(ang);
+    retr_y = hyp * sin(ang);
+    retr_z = z_pos+0.1;
+
+    cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
   }
 };
 
@@ -425,11 +409,21 @@ int main(int argc, char** argv)
 
   JacoControl JC;
 
-  /* SIMULATE USER POSITION
+  JC.moveSleep();
+  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  ros::Duration(2).sleep();
+
+  JC.orientGraspVertical(b_x, b_y);
+  JC.cartesianPlan(b_x, b_y, b_z, q_x, q_y, q_z, q_w);
+
+  JC.linearRetract(b_x, b_y, b_z);
+
+  /*// SIMULATE USER POSITION
   JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
   JC.createObject("Box", 2, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
   */
 
+  /*
   //Go to sleep
   JC.moveSleep();
   ros::Duration(2).sleep();
@@ -484,6 +478,7 @@ int main(int argc, char** argv)
   //Remove bottle and cup from simulation
   JC.removeObject(1);
   JC.removeObject(2);
+  */
 
   ros::shutdown();
   return 0;
