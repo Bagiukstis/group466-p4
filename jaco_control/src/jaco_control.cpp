@@ -14,9 +14,9 @@ float q_w;
 float q_x;
 float q_y;
 float q_z;
+float ang;
 
 float pour_x, pour_y, pour_z;
-float retr_x, retr_y, retr_z;
 
 //Bottle position
 float b_x = -0.6;
@@ -44,12 +44,12 @@ class JacoControl{
       std::vector<double> joint_group_positions;
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
-      joint_group_positions[0] = -15 * d2r;
+      joint_group_positions[0] = 0 * d2r;
       joint_group_positions[1] = 120 * d2r;
       joint_group_positions[2] = 0 * d2r;
       joint_group_positions[3] = 30 * d2r;
       joint_group_positions[4] = 0 * d2r;
-      joint_group_positions[5] = 210 * d2r;
+      joint_group_positions[5] = 220 * d2r;
       joint_group_positions[6] = 0 * d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
@@ -58,6 +58,34 @@ class JacoControl{
       move_group.move();
     }
 
+    void moveHome(){
+      static const std::string PLANNING_GROUP = "arm";
+
+      moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+      moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+      const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+      moveit::planning_interface::MoveGroupInterface::Plan planHome;
+      moveit::core::RobotStatePtr current_state = move_group.getCurrentState();
+
+      std::vector<double> joint_group_positions;
+      current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
+
+      joint_group_positions[0] = 0 * d2r;
+      joint_group_positions[1] = 180 * d2r;
+      joint_group_positions[2] = 0 * d2r;
+      joint_group_positions[3] = 90 * d2r;
+      joint_group_positions[4] = 0 * d2r;
+      joint_group_positions[5] = 180 * d2r;
+      joint_group_positions[6] = 0 * d2r;
+      move_group.setJointValueTarget(joint_group_positions);
+
+      bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+      //EXECUTE TRAJECTORY
+      move_group.move();
+    }
 
   void jointPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = movement_group;
@@ -86,8 +114,8 @@ class JacoControl{
     move_group.move();
   }
 
-  void cartesianPlan(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
-    static const std::string PLANNING_GROUP = "arm";
+  void cartesianPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
+    static const std::string PLANNING_GROUP = movement_group;
 
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -354,7 +382,7 @@ class JacoControl{
   }
 
   void orientGraspHorizontal(float x_pos, float y_pos){
-    float ang = atan2(y_pos,x_pos)-(90*d2r);
+    ang = atan2(y_pos,x_pos)-(90*d2r);
 
     float Y = ang;          //YAW = Z
     float P = 1.570796;     //PITCH = Y
@@ -374,30 +402,127 @@ class JacoControl{
   }
 
   void pourBottleAt(float x_pos, float y_pos, float z_pos){
-    float ang = atan2(y_pos,x_pos)-(90*d2r);
+    ang = atan2(y_pos,x_pos);
+
     float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
     float ang2 = atan2(0.1,hyp);
-    float full_ang = ang + ang2 + (90*d2r);
+    float full_ang = ang + ang2;
     float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
 
-    float pour_x = hyp2 * cos(full_ang);
-    float pour_y = hyp2 * sin(full_ang);
-    float pour_z = z_pos + 0.1;
-
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+    pour_x = hyp2 * cos(full_ang);
+    pour_y = hyp2 * sin(full_ang);
+    pour_z = z_pos + 0.1;
   }
+  void loop2(){
+    moveSleep();
+    ros::Duration(2).sleep();
 
-  void linearRetract(float x_pos, float y_pos, float z_pos){
-    float ang = atan2(y_pos,x_pos);
-    float hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
+    //Spawn Bottle
+    createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
+    //Spawn Cup
+    createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
 
-    retr_x = hyp * cos(ang);
-    retr_y = hyp * sin(ang);
-    retr_z = z_pos+0.1;
+    //Move Cartesian to bottle
+    orientGraspVertical(b_x, b_y);
+    cartesianPlan("arm", b_x, b_y, b_z, q_x, q_y, q_z, q_w);
 
-    cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
+    //Close gripper and tips
+    grasptip(0.5);
+    grasp(0.5);
+
+    //Attach bottle to gripper
+    attachObject(1);
+
+    //Lift bottle
+    cartesianPlan("arm", b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
+
+    //Move Cartesian to cup
+    orientGraspVertical(c_x, c_y);
+    pourBottleAt(c_x, c_y, c_z);
+    cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+
+    //Turn gripper to pour
+    orientGraspHorizontal(c_x, c_y);
+    cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+    ros::Duration(3).sleep();
+
+    //Turn gripper back
+    orientGraspVertical(c_x, c_y);
+    cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+
+
+    //Replace bottle on table
+    cartesianPlan("arm", b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
+    cartesianPlan("arm", b_x, b_y, b_z, q_x, q_y, q_z, q_w);
+
+    //Release grip
+    grasp(0.0);
+    grasptip(0.0);
+
+    //Detach bottle from gripper
+    detachObject(1);
+
+    //Remove bottle and cup from simulation
+    removeObject(1);
+    removeObject(2);
   }
+  void loop1(){
+    moveSleep();
+    ros::Duration(2).sleep();
+
+    //Spawn Bottle
+    createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
+    //Spawn Cup
+    createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
+
+    //Move Cartesian to bottle
+    orientGraspVertical(c_x, c_y);
+    cartesianPlan("arm", c_x, c_y, c_z, q_x, q_y, q_z, q_w);
+//    grasptip(0.6);
+  //  grasp(0.6);
+    //attachObject(2);
+
+  //  cartesianPlan("arm", c_x, c_y, c_z+0.15, q_x, q_y, q_z, q_w);
+
+    gripperConstraints(q_x, q_y, q_z, q_w);
+    moveSleep();
+
+    clearConstraints();
+  }
+int menu(){
+   ROS_INFO("Choose the task that you want to perform");
+   ROS_INFO("Possible options:");
+   ROS_INFO("1. Grasp cup");
+   ROS_INFO("2. Grasp and Pour from the bottle");
+   ROS_INFO("0. Exit");
+   ROS_INFO("Input an integer:");
+
+   int choice;
+   while(ros::ok){
+   std::cin >> choice;
+   if(choice==1){
+     loop1();
+     ros::shutdown();
+   }
+   else if(choice==2){
+     loop2();
+     ros::shutdown();
+   }
+   else if(choice==0){
+     ROS_INFO("Exiting");
+     ros::shutdown();
+   }
+   else{
+     ROS_INFO("Input was neither 1 or 2, try again:");
+   }
+   return 0;
+  }
+ }
 };
 
 int main(int argc, char** argv)
@@ -408,77 +533,12 @@ int main(int argc, char** argv)
   spinner.start();
 
   JacoControl JC;
+  JC.menu();
 
-  JC.moveSleep();
-  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-  ros::Duration(2).sleep();
+  //JC.moveSleep();
+  //JC.cartesianPlan("arm", 0.3, 0.3, 0.3, 0, 0, 0, 1);
+//  ros::Duration(10).sleep();
 
-  JC.orientGraspVertical(b_x, b_y);
-  JC.cartesianPlan(b_x, b_y, b_z, q_x, q_y, q_z, q_w);
-
-  JC.linearRetract(b_x, b_y, b_z);
-
-  /*// SIMULATE USER POSITION
-  JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
-  JC.createObject("Box", 2, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
-  */
-
-  /*
-  //Go to sleep
-  JC.moveSleep();
-  ros::Duration(2).sleep();
-
-  //Spawn Bottle
-  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-  ros::Duration(2).sleep();
-  //Spawn Cup
-  JC.createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
-  ros::Duration(2).sleep();
-
-  //Move Cartesian to bottle
-  JC.orientGraspVertical(b_x, b_y);
-  JC.cartesianPlan("arm", b_x, b_y, b_z, q_x, q_y, q_z, q_w);
-
-  //Close gripper and tips
-  JC.grasptip(0.5);
-  JC.grasp(0.5);
-
-  //Attach bottle to gripper
-  JC.attachObject(1);
-
-  //Lift bottle
-  JC.cartesianPlan("arm", b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
-
-  //Move Cartesian to cup
-  JC.orientGraspVertical(c_x, c_y);
-  JC.pourBottleAt(c_x, c_y, c_z);
-  JC.cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
-
-  //Turn gripper to pour
-  JC.orientGraspHorizontal(c_x, c_y);
-  JC.cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
-  ros::Duration(3).sleep();
-
-  //Turn gripper back
-  JC.orientGraspVertical(c_x, c_y);
-  JC.cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
-
-
-  //Replace bottle on table
-  JC.cartesianPlan("arm", b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
-  JC.cartesianPlan("arm", b_x, b_y, b_z, q_x, q_y, q_z, q_w);
-
-  //Release grip
-  JC.grasp(0.0);
-  JC.grasptip(0.0);
-
-  //Detach bottle from gripper
-  JC.detachObject(1);
-
-  //Remove bottle and cup from simulation
-  JC.removeObject(1);
-  JC.removeObject(2);
-  */
 
   ros::shutdown();
   return 0;
