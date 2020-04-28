@@ -524,19 +524,21 @@ int menu(){
    if(choice==1){
      loop1();
      ros::shutdown();
+     return 0;
    }
    else if(choice==2){
      loop2();
      ros::shutdown();
+     return 0;
    }
    else if(choice==0){
      ROS_INFO("Exiting");
      ros::shutdown();
+     return 0;
    }
    else{
-     ROS_INFO("Input was neither 1 or 2, try again:");
+     ROS_INFO("Input was neither 1 or 2, try again");
    }
-   return 0;
   }
  }
 };
