@@ -464,6 +464,10 @@ class JacoControl{
     linearRetract(x_pos, y_pos, z_pos);
   }
 
+  void simulateUser(){
+    JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
+    JC.createObject("Box", 2, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
+  }
 
   void loop2(){
     moveSleep();
