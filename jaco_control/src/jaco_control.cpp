@@ -414,6 +414,15 @@ class JacoControl{
     pour_y = hyp2 * sin(full_ang);
     pour_z = z_pos + 0.1;
 
+    orientGraspVertical(x_pos, y_pos);
+    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+
+    orientGraspHorizontal(x_pos, y_pos);
+    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+
+    ros::Duration(5).sleep();
+
+    orientGraspVertical(x_pos, y_pos);
     cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
   }
 
@@ -428,6 +437,38 @@ class JacoControl{
     cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
   }
 
+  void closeGripper(){
+    grasptip(0.55);
+    grasp(0.55);
+  }
+
+  void openGripper(){
+    grasptip(0);
+    grasp(0);
+  }
+
+  void pickObject(float x_pos, float y_pos, float z_pos){
+    orientGraspVertical(x_pos, y_pos);
+    cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
+    closeGripper();
+    attachObject(1);
+    cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
+  }
+
+  void placeObject(float x_pos, float y_pos, float z_pos){
+    orientGraspVertical(x_pos, y_pos);
+    cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
+    cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
+    openGripper();
+    detachObject(1);
+    linearRetract(x_pos, y_pos, z_pos);
+  }
+
+  void simulateUser(){
+    JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
+    JC.createObject("Box", 2, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
+  }
+
   void loop2(){
     moveSleep();
     ros::Duration(2).sleep();
@@ -439,46 +480,12 @@ class JacoControl{
     createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
     ros::Duration(2).sleep();
 
-    //Move Cartesian to bottle
-    orientGraspVertical(b_x, b_y);
-    cartesianPlan(b_x, b_y, b_z, q_x, q_y, q_z, q_w);
+    pickObject(b_x, b_y, b_z);
 
-    //Close gripper and tips
-    grasptip(0.5);
-    grasp(0.5);
-
-    //Attach bottle to gripper
-    attachObject(1);
-
-    //Lift bottle
-    cartesianPlan(b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
-
-    //Move Cartesian to cup
-    orientGraspVertical(c_x, c_y);
     pourBottleAt(c_x, c_y, c_z);
 
-    //Turn gripper to pour
-    orientGraspHorizontal(c_x, c_y);
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
-    ros::Duration(3).sleep();
+    placeObject(b_x, b_y, b_z);
 
-    //Turn gripper back
-    orientGraspVertical(c_x, c_y);
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
-
-
-    //Replace bottle on table
-    cartesianPlan(b_x, b_y, b_z+0.3, q_x, q_y, q_z, q_w);
-    cartesianPlan(b_x, b_y, b_z, q_x, q_y, q_z, q_w);
-
-    //Release grip
-    grasp(0.0);
-    grasptip(0.0);
-
-    //Detach bottle from gripper
-    detachObject(1);
-
-    linearRetract(b_x, b_y, b_z);
     moveSleep();
 
     //Remove bottle and cup from simulation
