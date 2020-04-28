@@ -222,16 +222,15 @@ class JacoControl{
     else if (id == 2){
     collision_object.id = "Object2";
     }
-
-  /*  else if (id == 3){
-    collision_object.id = "Object4";
+    else if (id == 3){
+    collision_object.id = "Object3";
     }
     else if (id == 4){
-    collision_object.id = "Object5";
+    collision_object.id = "Object4";
     }
     else if (id == 5){
-    collision_object.id = "Object6";
-  } */
+    collision_object.id = "Object5";
+    }
 
     shape_msgs::SolidPrimitive primitive;
     if (type == "Cylinder"){
@@ -288,6 +287,15 @@ class JacoControl{
     else if (id == 2){
       collision_object.id = "Object2";
     }
+    else if (id == 3){
+      collision_object.id = "Object3";
+    }
+    else if (id == 4){
+      collision_object.id = "Object4";
+    }
+    else if (id == 5){
+      collision_object.id = "Object5";
+    }
     std::vector<std::string> object_ids;
     object_ids.push_back(collision_object.id);
     planning_scene_interface.removeCollisionObjects(object_ids);
@@ -309,6 +317,18 @@ class JacoControl{
     collision_object.id = "Object2";
     move_group.attachObject(collision_object.id);
     }
+  /*  else if (id == 3){
+    collision_object.id = "Object3";
+    move_group.attachObject(collision_object.id);
+    }
+    else if (id == 4){
+    collision_object.id = "Object4";
+    move_group.attachObject(collision_object.id);
+    }
+    else if (id == 5){
+    collision_object.id = "Object5";
+    move_group.attachObject(collision_object.id);
+  } */
     sleep(5.0);
   }
 
@@ -465,8 +485,9 @@ class JacoControl{
   }
 
   void simulateUser(){
-    JC.createObject("Sphere", 1, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
-    JC.createObject("Box", 2, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
+    createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
+    createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
+    createObject("Box", 5, -0.7, 0, 0.25, 0.75, 1.0, 0.05, 0, 0, 0, 1);
   }
 
   void loop2(){
@@ -489,8 +510,8 @@ class JacoControl{
     moveSleep();
 
     //Remove bottle and cup from simulation
-    removeObject(1);
-    removeObject(2);
+  //  removeObject(1);
+  //  removeObject(2);
   }
   void loop1(){
     moveSleep();
@@ -506,14 +527,16 @@ class JacoControl{
     //Move Cartesian to bottle
     orientGraspVertical(c_x, c_y);
     cartesianPlan(c_x, c_y, c_z, q_x, q_y, q_z, q_w);
-//    grasptip(0.6);
-  //  grasp(0.6);
-    //attachObject(2);
+
+    grasptip(0.6);
+    grasp(0.6);
+    attachObject(2);
 
   //  cartesianPlan("arm", c_x, c_y, c_z+0.15, q_x, q_y, q_z, q_w);
 
     gripperConstraints(q_x, q_y, q_z, q_w);
     moveSleep();
+    detachObject(2);
 
     clearConstraints();
   }
@@ -528,11 +551,12 @@ class JacoControl{
      int choice;
      while(ros::ok){
      std::cin >> choice;
+     simulateUser();
      if(choice==1){
        loop1();
-       ros::shutdown();
        removeObject(1);
        removeObject(2);
+       ros::shutdown();
        return 0;
      }
      else if(choice==2){
@@ -544,16 +568,16 @@ class JacoControl{
        std::cin >> choice;
        if(choice==1){
          loop1();
-         ros::shutdown();
          removeObject(1);
          removeObject(2);
+         ros::shutdown();
          return 0;
        }
        else if(choice==0){
          ROS_INFO("Exiting");
-         ros::shutdown();
          removeObject(1);
          removeObject(2);
+         ros::shutdown();
          return 0;
        }
        else{
