@@ -510,37 +510,59 @@ class JacoControl{
 
     clearConstraints();
   }
-int menu(){
-   ROS_INFO("Choose the task that you want to perform");
-   ROS_INFO("Possible options:");
-   ROS_INFO("1. Grasp cup");
-   ROS_INFO("2. Grasp and Pour from the bottle");
-   ROS_INFO("0. Exit");
-   ROS_INFO("Input an integer:");
+  int menu(){
+     ROS_INFO("Choose the task that you want to perform");
+     ROS_INFO("Possible options:");
+     ROS_INFO("1. Grasp an empty cup");
+     ROS_INFO("2. Grasp and Pour from the bottle");
+     ROS_INFO("0. Exit");
+     ROS_INFO("Input an integer:");
 
-   int choice;
-   while(ros::ok){
-   std::cin >> choice;
-   if(choice==1){
-     loop1();
-     ros::shutdown();
-     return 0;
+     int choice;
+     while(ros::ok){
+     std::cin >> choice;
+     if(choice==1){
+       loop1();
+       ros::shutdown();
+       removeObject(1);
+       removeObject(2);
+       return 0;
+     }
+     else if(choice==2){
+       loop2();
+       ROS_INFO("Choose the task that you want to perform");
+       ROS_INFO("Possible options:");
+       ROS_INFO("1. Grasp a full cup");
+       ROS_INFO("0. Exit");
+       std::cin >> choice;
+       if(choice==1){
+         loop1();
+         ros::shutdown();
+         removeObject(1);
+         removeObject(2);
+         return 0;
+       }
+       else if(choice==0){
+         ROS_INFO("Exiting");
+         ros::shutdown();
+         removeObject(1);
+         removeObject(2);
+         return 0;
+       }
+       else{
+         ROS_INFO("Input was neither 1 or 0, try again");
+       }
+     }
+     else if(choice==0){
+       ROS_INFO("Exiting");
+       ros::shutdown();
+       return 0;
+     }
+     else{
+       ROS_INFO("Input was neither 1 or 2, try again");
+     }
+    }
    }
-   else if(choice==2){
-     loop2();
-     ros::shutdown();
-     return 0;
-   }
-   else if(choice==0){
-     ROS_INFO("Exiting");
-     ros::shutdown();
-     return 0;
-   }
-   else{
-     ROS_INFO("Input was neither 1 or 2, try again");
-   }
-  }
- }
 };
 
 int main(int argc, char** argv)
