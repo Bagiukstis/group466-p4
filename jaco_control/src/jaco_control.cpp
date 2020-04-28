@@ -402,18 +402,31 @@ class JacoControl{
   }
 
   void pourBottleAt(float x_pos, float y_pos, float z_pos){
-    ang = atan2(y_pos,x_pos);
-
+    float ang = atan2(y_pos,x_pos)-(90*d2r);
     float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
     float ang2 = atan2(0.1,hyp);
-    float full_ang = ang + ang2;
+    float full_ang = ang + ang2 + (90*d2r);
     float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
 
-    pour_x = hyp2 * cos(full_ang);
-    pour_y = hyp2 * sin(full_ang);
-    pour_z = z_pos + 0.1;
+    float pour_x = hyp2 * cos(full_ang);
+    float pour_y = hyp2 * sin(full_ang);
+    float pour_z = z_pos + 0.1;
+
+    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
   }
+
+  void linearRetract(float x_pos, float y_pos, float z_pos){
+    float ang = atan2(y_pos,x_pos);
+    float hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
+
+    float retr_x = hyp * cos(ang);
+    float retr_y = hyp * sin(ang);
+    float retr_z = z_pos+0.1;
+
+    cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
+  }
+  
   void loop2(){
     moveSleep();
     ros::Duration(2).sleep();
@@ -442,7 +455,6 @@ class JacoControl{
     //Move Cartesian to cup
     orientGraspVertical(c_x, c_y);
     pourBottleAt(c_x, c_y, c_z);
-    cartesianPlan("arm", pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
 
     //Turn gripper to pour
     orientGraspHorizontal(c_x, c_y);
@@ -464,6 +476,9 @@ class JacoControl{
 
     //Detach bottle from gripper
     detachObject(1);
+    
+    linearRetract(b_x, b_y, b_z);
+    moveSleep();
 
     //Remove bottle and cup from simulation
     removeObject(1);
