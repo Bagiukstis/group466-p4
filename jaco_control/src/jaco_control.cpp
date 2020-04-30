@@ -10,13 +10,15 @@
 #include <math.h>
 #include "global.h"
 
-quaternians q;
-bottle b;
-cup c;
 
 class JacoControl{
+  private:
+  quaternians q;
+  bottle b;
+  cup c;
   public:
-    void moveSleep(){
+
+  void moveSleep(){
       static const std::string PLANNING_GROUP = "arm";
 
       moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
@@ -44,7 +46,7 @@ class JacoControl{
       move_group.move();
     }
 
-    void moveHome(){
+  void moveHome(){
       static const std::string PLANNING_GROUP = "arm";
 
       moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
@@ -627,6 +629,7 @@ class JacoControl{
    }
    */
  }
+
  int menu1(){
    while(ros::ok){
    int choice;
