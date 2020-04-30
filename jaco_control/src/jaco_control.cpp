@@ -13,7 +13,7 @@
 
 class JacoControl{
   private:
-  quaternians q;
+  quaternions q;
   bottle b;
   cup c;
   public:
