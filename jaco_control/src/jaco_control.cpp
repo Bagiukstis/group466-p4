@@ -660,29 +660,33 @@ class JacoControl{
      std::cin >> object;
 
      if(object == 1){
-       //JC.pick(1);
        orientGraspVertical(b.x, b.y);
        cartesianPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
+       //Some gripper action
+       JC.attachObject(object);
+       ros::Duration(2).sleep();
+       JC.cartesianPlan(b.x, b.y, b.z+0.15, q.x, q.y, q.z, q.w);
      }
 
        else if(object == 2){
-         //  JC.pick(2);
          orientGraspVertical(c.x, c.y);
          cartesianPlan(c.x, c.y, c.z, q.x, q.y, q.z, q.w);
+         //Some gripper action
+         JC.attachObject(object);
+         ros::Duration(2).sleep();
+         JC.cartesianPlan(c.x, c.y, c.z+0.15, q.x, q.y, q.z, q.w);
        }
 
        else if(object == 0){
          ROS_INFO("Exiting");
-         ros::shutdown();
-         return 0;
        }
 
        else{
-         ROS_INFO("Unrecognized object");
+         ROS_INFO("Unrecognized object, please try again");
+         choice = 1;
        }
-     ROS_INFO("Put down?");
+     
      ROS_INFO("Enter 1 to place");
-     ROS_INFO("Enter 0 to exit");
      std::cin >> option;
      if(option == 1 && object == 1){
        place(b.x, b.y, b.z, object);
@@ -691,13 +695,9 @@ class JacoControl{
      else if(option == 1 && object == 2){
        place(c.x, c.y, c.z, object);
      }
-     else if (option == 0){
-       ROS_INFO("Exiting");
-       ros::shutdown();
-       return 0;
-     }
      else{
        ROS_INFO("Not a valid input, try again");
+       std::cin >> option;
      }
    }
 
@@ -725,6 +725,6 @@ int main(int argc, char** argv)
   JacoControl JC;
   JC.menu1();
 
-  ros::shutdown();
+  ros::spin();
   return 0;
 }
