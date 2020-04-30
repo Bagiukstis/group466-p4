@@ -9,7 +9,7 @@ struct cup{
   float y = 0.3;
   float z = 0.6;
 };
-struct quaternians{
+struct quaternions{
   float w;
   float x;
   float y;
