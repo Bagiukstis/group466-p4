@@ -8,6 +8,8 @@
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <math.h>
+#include "global.h"
+
 
 const double d2r = 0.01745329251; //Convert from degree to radian
 float q_w;
@@ -19,15 +21,8 @@ float ang;
 float pour_x, pour_y, pour_z;
 float retr_x, retr_y, retr_z;
 
-//Bottle position
-float b_x = -0.6;
-float b_y = -0.3;
-float b_z = 0.6;
-
-//Cup position
-float c_x = -0.6;
-float c_y = 0.3;
-float c_z = 0.6;
+bottle b;
+cup c;
 
 class JacoControl{
   public:
@@ -467,20 +462,24 @@ class JacoControl{
     grasp(0);
   }
 
-  void pickObject(float x_pos, float y_pos, float z_pos){
+  void pickObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
+    ros::Duration(2).sleep();
     cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
+    ros::Duration(5).sleep();
     closeGripper();
-    attachObject(1);
+    ros::Duration(5).sleep();
+    attachObject(obj_id);
+    ros::Duration(5).sleep();
     cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
   }
 
-  void placeObject(float x_pos, float y_pos, float z_pos){
+  void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
     cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
     openGripper();
-    detachObject(1);
+    detachObject(obj_id);
     linearRetract(x_pos, y_pos, z_pos);
   }
 
@@ -489,7 +488,45 @@ class JacoControl{
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
     createObject("Box", 5, -0.7, 0, 0.25, 0.75, 1.0, 0.05, 0, 0, 0, 1);
   }
+  void simulateUserAndTable(){
+    createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
+    createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
+    createObject("Box", 5, -0.7, -0.35, 0.125, 0.75, 1.0, 0.05, 0, 0, 0, 1);
+  }
 
+  void pour(){
+    moveSleep();
+    ros::Duration(2).sleep();
+
+    pickObject(b.x, b.y, b.z, 1);
+
+    pourBottleAt(c.x, c.y, c.z);
+
+    placeObject(b.x, b.y, b.z, 1);
+
+    moveSleep();
+  }
+
+  void pick(int obj_id){
+    if(obj_id == 1){
+      pickObject(b.x, b.y, b.z, obj_id);
+    }
+    else if(obj_id == 2){
+      pickObject(c.x, c.y, c.z, obj_id);
+    }
+    else{
+      ROS_INFO("Unrecognized object");
+    }
+  }
+
+  void place(float x_pos, float y_pos, float z_pos, int obj_id){
+    placeObject(x_pos, y_pos, z_pos, obj_id);
+    linearRetract(x_pos, y_pos, z_pos);
+    moveSleep();
+  }
+
+
+/*
   void loop2(){
     moveSleep();
     ros::Duration(2).sleep();
@@ -540,6 +577,7 @@ class JacoControl{
 
     clearConstraints();
   }
+  */
   int menu(){
      ROS_INFO("Choose the task that you want to perform");
      ROS_INFO("Possible options:");
@@ -549,7 +587,7 @@ class JacoControl{
      ROS_INFO("Input an integer:");
 
      int choice;
-     while(ros::ok){
+  /*   while(ros::ok){
      std::cin >> choice;
      simulateUser();
      if(choice==1){
@@ -559,30 +597,30 @@ class JacoControl{
        ros::shutdown();
        return 0;
      }
-     else if(choice==2){
-       loop2();
-       ROS_INFO("Choose the task that you want to perform");
-       ROS_INFO("Possible options:");
-       ROS_INFO("1. Grasp a full cup");
-       ROS_INFO("0. Exit");
-       std::cin >> choice;
-       if(choice==1){
-         loop1();
-         removeObject(1);
-         removeObject(2);
-         ros::shutdown();
-         return 0;
-       }
-       else if(choice==0){
-         ROS_INFO("Exiting");
-         removeObject(1);
-         removeObject(2);
-         ros::shutdown();
-         return 0;
-       }
-       else{
-         ROS_INFO("Input was neither 1 or 0, try again");
-       }
+    else if(choice==2){
+      loop2();
+      ROS_INFO("Choose the task that you want to perform");
+      ROS_INFO("Possible options:");
+      ROS_INFO("1. Grasp a full cup");
+      ROS_INFO("0. Exit");
+      td::cin >> choice;
+              if(choice==1){
+                loop1();
+                removeObject(1);
+                removeObject(2);
+                ros::shutdown();
+                return 0;
+              }
+              else if(choice==0){
+                ROS_INFO("Exiting");
+                removeObject(1);
+                removeObject(2);
+                ros::shutdown();
+                return 0;
+              }
+              else{
+                ROS_INFO("Input was neither 1 or 0, try again");
+              }
      }
      else if(choice==0){
        ROS_INFO("Exiting");
@@ -594,6 +632,8 @@ class JacoControl{
      }
     }
    }
+   */
+ }
 };
 
 int main(int argc, char** argv)
@@ -603,14 +643,96 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  JacoControl JC;
-  //JC.menu();
-  JC.createObject("Cylinder", 1, 0.1, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-  JC.createObject("Box", 2, 0.2, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-  JC.createObject("Sphere", 3, 0.3, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-  JC.createObject("Cone", 4, 0.4, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  int choice;
+  int place;
+  int object;
 
-  
+  JacoControl JC;
+    while(ros::ok){
+    JC.simulateUser();
+    ros::Duration(2).sleep();
+    //Spawn Bottle
+    JC.createObject("Cylinder", 1, b.x, b.y, b.z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
+    //Spawn Cup
+    JC.createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+    ros::Duration(2).sleep();
+    JC.moveSleep();
+
+    ROS_INFO("Choose task:");
+    ROS_INFO("1. Pick");
+    ROS_INFO("2. Pour");
+    ROS_INFO("0. Exit");
+    std::cin >> choice;
+
+    if(choice==1){
+      ROS_INFO("Choose object:");
+      ROS_INFO("1. Bottle");
+      ROS_INFO("2. Cup");
+      ROS_INFO("0. Exit");
+      std::cin >> object;
+
+      if(object == 1){
+        //JC.pick(1);
+        JC.orientGraspVertical(b.x, b.y);
+        JC.cartesianPlan(b.x, b.y, b.z, q_x, q_y, q_z, q_w);
+      }
+
+        else if(object == 2){
+          //  JC.pick(2);
+          JC.orientGraspVertical(c.x, c.y);
+          JC.cartesianPlan(c.x, c.y, c.z, q_x, q_y, q_z, q_w);
+        }
+
+        else if(object == 0){
+          ROS_INFO("Exiting");
+          ros::shutdown();
+          return 0;
+        }
+
+        else{
+          ROS_INFO("Unrecognized object");
+        }
+      ROS_INFO("Put down?");
+      ROS_INFO("Enter 1 to place");
+      ROS_INFO("Enter 0 to exit");
+      std::cin >> place;
+      if(place == 1 && object == 1){
+        JC.place(b.x, b.y, b.z, object);
+
+      }
+      else if(place == 1 && object == 2){
+        JC.place(c.x, c.y, c.z, object);
+      }
+      else if (place == 0){
+        ROS_INFO("Exiting");
+        ros::shutdown();
+        return 0;
+      }
+      else{
+        ROS_INFO("Not a valid input, try again");
+      }
+    }
+
+    else if(choice==2){
+      JC.pour();
+      ros::shutdown();
+      return 0;
+    }
+    else if(choice==0){
+      ROS_INFO("Exiting");
+      ros::shutdown();
+      return 0;
+    }
+  }
+
+  //JC.menu();
+//  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+//  ros::Duration(2).sleep();
+
+//  JC.pickObject(b_x, b_y, b_z);
+
+
   //JC.moveSleep();
   //JC.cartesianPlan("arm", 0.3, 0.3, 0.3, 0, 0, 0, 1);
 //  ros::Duration(10).sleep();
