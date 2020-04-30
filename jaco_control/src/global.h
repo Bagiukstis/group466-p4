@@ -1,8 +1,9 @@
-
+#ifndef JACO_CONTROL
+#define JACO_CONTROL
 struct bottle {
   float x = -0.5;
   float y = -0.5;
-  float z = 0.50;
+  float z = 0.5;
 };
 struct cup{
   float x = -0.6;
@@ -38,3 +39,4 @@ struct retract{
   float y;
   float z;
 };
+#endif

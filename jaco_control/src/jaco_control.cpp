@@ -481,12 +481,7 @@ class JacoControl{
   void simulateUser(){
     createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
-    createObject("Box", 5, -0.7, 0, 0.25, 0.75, 1.0, 0.05, 0, 0, 0, 1);
-  }
-  void simulateUserAndTable(){
-    createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
-    createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
-    createObject("Box", 5, -0.7, -0.35, 0.125, 0.75, 1.0, 0.05, 0, 0, 0, 1);
+    createObject("Box", 5, -0.7, 0, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
   }
 
   void pour(){
@@ -514,121 +509,12 @@ class JacoControl{
     }
   }
 
+
   void place(float x_pos, float y_pos, float z_pos, int obj_id){
     placeObject(x_pos, y_pos, z_pos, obj_id);
     linearRetract(x_pos, y_pos, z_pos);
     moveSleep();
   }
-
-
-/*
-  void loop2(){
-    moveSleep();
-    ros::Duration(2).sleep();
-
-    //Spawn Bottle
-    createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-    //Spawn Cup
-    createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-
-    pickObject(b_x, b_y, b_z);
-
-    pourBottleAt(c_x, c_y, c_z);
-
-    placeObject(b_x, b_y, b_z);
-
-    moveSleep();
-
-    //Remove bottle and cup from simulation
-  //  removeObject(1);
-  //  removeObject(2);
-  }
-  void loop1(){
-    moveSleep();
-    ros::Duration(2).sleep();
-
-    //Spawn Bottle
-    createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-    //Spawn Cup
-    createObject("Cylinder", 2, c_x, c_y, c_z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-
-    //Move Cartesian to bottle
-    orientGraspVertical(c_x, c_y);
-    cartesianPlan(c_x, c_y, c_z, q_x, q_y, q_z, q_w);
-
-    grasptip(0.6);
-    grasp(0.6);
-    attachObject(2);
-
-  //  cartesianPlan("arm", c_x, c_y, c_z+0.15, q_x, q_y, q_z, q_w);
-
-    gripperConstraints(q_x, q_y, q_z, q_w);
-    moveSleep();
-    detachObject(2);
-
-    clearConstraints();
-  }
-  */
- int menu(){
-     ROS_INFO("Choose the task that you want to perform");
-     ROS_INFO("Possible options:");
-     ROS_INFO("1. Grasp an empty cup");
-     ROS_INFO("2. Grasp and Pour from the bottle");
-     ROS_INFO("0. Exit");
-     ROS_INFO("Input an integer:");
-
-     int choice;
-  /*   while(ros::ok){
-     std::cin >> choice;
-     simulateUser();
-     if(choice==1){
-       loop1();
-       removeObject(1);
-       removeObject(2);
-       ros::shutdown();
-       return 0;
-     }
-    else if(choice==2){
-      loop2();
-      ROS_INFO("Choose the task that you want to perform");
-      ROS_INFO("Possible options:");
-      ROS_INFO("1. Grasp a full cup");
-      ROS_INFO("0. Exit");
-      td::cin >> choice;
-              if(choice==1){
-                loop1();
-                removeObject(1);
-                removeObject(2);
-                ros::shutdown();
-                return 0;
-              }
-              else if(choice==0){
-                ROS_INFO("Exiting");
-                removeObject(1);
-                removeObject(2);
-                ros::shutdown();
-                return 0;
-              }
-              else{
-                ROS_INFO("Input was neither 1 or 0, try again");
-              }
-     }
-     else if(choice==0){
-       ROS_INFO("Exiting");
-       ros::shutdown();
-       return 0;
-     }
-     else{
-       ROS_INFO("Input was neither 1 or 2, try again");
-     }
-    }
-   }
-   */
- }
 
  void simulateObjects(){
    simulateUser();
@@ -663,25 +549,17 @@ class JacoControl{
      std::cin >> object;
 
      if(object == 1){
-       orientGraspVertical(b.x, b.y);
-       cartesianPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
-       //Some gripper action
-       attachObject(object);
-       ros::Duration(2).sleep();
-       cartesianPlan(b.x, b.y, b.z+0.15, q.x, q.y, q.z, q.w);
+       pick(object);
      }
 
        else if(object == 2){
-         orientGraspVertical(c.x, c.y);
-         cartesianPlan(c.x, c.y, c.z, q.x, q.y, q.z, q.w);
-         //Some gripper action
-         attachObject(object);
-         ros::Duration(2).sleep();
-         cartesianPlan(c.x, c.y, c.z+0.15, q.x, q.y, q.z, q.w);
+         pick(object);
        }
 
        else if(object == 0){
          ROS_INFO("Power: Off");
+         ros::shutdown();
+         return 0;
        }
 
        else{
