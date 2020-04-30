@@ -10,17 +10,7 @@
 #include <math.h>
 #include "global.h"
 
-
-const double d2r = 0.01745329251; //Convert from degree to radian
-float q_w;
-float q_x;
-float q_y;
-float q_z;
-float ang;
-
-float pour_x, pour_y, pour_z;
-float retr_x, retr_y, retr_z;
-
+quaternians q;
 bottle b;
 cup c;
 
@@ -40,13 +30,13 @@ class JacoControl{
       std::vector<double> joint_group_positions;
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
-      joint_group_positions[0] = 0 * d2r;
-      joint_group_positions[1] = 120 * d2r;
-      joint_group_positions[2] = 0 * d2r;
-      joint_group_positions[3] = 30 * d2r;
-      joint_group_positions[4] = 0 * d2r;
-      joint_group_positions[5] = 220 * d2r;
-      joint_group_positions[6] = 0 * d2r;
+      joint_group_positions[0] = 0 * q.d2r;
+      joint_group_positions[1] = 120 * q.d2r;
+      joint_group_positions[2] = 0 * q.d2r;
+      joint_group_positions[3] = 30 * q.d2r;
+      joint_group_positions[4] = 0 * q.d2r;
+      joint_group_positions[5] = 220 * q.d2r;
+      joint_group_positions[6] = 0 * q.d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
       bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -68,13 +58,13 @@ class JacoControl{
       std::vector<double> joint_group_positions;
       current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
 
-      joint_group_positions[0] = 0 * d2r;
-      joint_group_positions[1] = 180 * d2r;
-      joint_group_positions[2] = 0 * d2r;
-      joint_group_positions[3] = 90 * d2r;
-      joint_group_positions[4] = 0 * d2r;
-      joint_group_positions[5] = 180 * d2r;
-      joint_group_positions[6] = 0 * d2r;
+      joint_group_positions[0] = 0 * q.d2r;
+      joint_group_positions[1] = 180 * q.d2r;
+      joint_group_positions[2] = 0 * q.d2r;
+      joint_group_positions[3] = 90 * q.d2r;
+      joint_group_positions[4] = 0 * q.d2r;
+      joint_group_positions[5] = 180 * q.d2r;
+      joint_group_positions[6] = 0 * q.d2r;
       move_group.setJointValueTarget(joint_group_positions);
 
       bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -378,78 +368,81 @@ class JacoControl{
   }
 
   void orientGraspVertical(float x_pos, float y_pos){
-    ang = atan2(y_pos,x_pos)-(90*d2r);
+    q.ang = atan2(y_pos,x_pos)-(90*q.d2r);
 
-    float Y = ang;          //YAW = Z
-    float P = 0.0;          //PITCH = Y
-    float R = -1.570796;    //ROLL = X
+    q.Y = q.ang;          //YAW = Z
+    q.P = 0.0;          //PITCH = Y
+    q.R = -1.570796;    //ROLL = X
 
-    float cy = cos(Y * 0.5);
-    float sy = sin(Y * 0.5);
-    float cp = cos(P * 0.5);
-    float sp = sin(P * 0.5);
-    float cr = cos(R * 0.5);
-    float sr = sin(R * 0.5);
+    q.cy = cos(q.Y * 0.5);
+    q.sy = sin(q.Y * 0.5);
+    q.cp = cos(q.P * 0.5);
+    q.sp = sin(q.P * 0.5);
+    q.cr = cos(q.R * 0.5);
+    q.sr = sin(q.R * 0.5);
 
-    q_w = cr * cp * cy + sr * sp * sy;
-    q_x = sr * cp * cy - cr * sp * sy;
-    q_y = cr * sp * cy + sr * cp * sy;
-    q_z = cr * cp * sy - sr * sp * cy;
+    q.w = q.cr * q.cp * q.cy + q.sr * q.sp * q.sy;
+    q.x = q.sr * q.cp * q.cy - q.cr * q.sp * q.sy;
+    q.y = q.cr * q.sp * q.cy + q.sr * q.cp * q.sy;
+    q.z = q.cr * q.cp * q.sy - q.sr * q.sp * q.cy;
   }
 
   void orientGraspHorizontal(float x_pos, float y_pos){
-    ang = atan2(y_pos,x_pos)-(90*d2r);
+    q.ang = atan2(y_pos,x_pos)-(90*q.d2r);
 
-    float Y = ang;          //YAW = Z
-    float P = 1.570796;     //PITCH = Y
-    float R = -1.570796;    //ROLL = X
+    q.Y = q.ang;          //YAW = Z
+    q.P = 1.570796;     //PITCH = Y
+    q.R = -1.570796;    //ROLL = X
 
-    float cy = cos(Y * 0.5);
-    float sy = sin(Y * 0.5);
-    float cp = cos(P * 0.5);
-    float sp = sin(P * 0.5);
-    float cr = cos(R * 0.5);
-    float sr = sin(R * 0.5);
 
-    q_w = cr * cp * cy + sr * sp * sy;
-    q_x = sr * cp * cy - cr * sp * sy;
-    q_y = cr * sp * cy + sr * cp * sy;
-    q_z = cr * cp * sy - sr * sp * cy;
+    q.cy = cos(q.Y * 0.5);
+    q.sy = sin(q.Y * 0.5);
+    q.cp = cos(q.P * 0.5);
+    q.sp = sin(q.P * 0.5);
+    q.cr = cos(q.R * 0.5);
+    q.sr = sin(q.R * 0.5);
+
+    q.w = q.cr * q.cp * q.cy + q.sr * q.sp * q.sy;
+    q.x = q.sr * q.cp * q.cy - q.cr * q.sp * q.sy;
+    q.y = q.cr * q.sp * q.cy + q.sr * q.cp * q.sy;
+    q.z = q.cr * q.cp * q.sy - q.sr * q.sp * q.cy;
   }
 
   void pourBottleAt(float x_pos, float y_pos, float z_pos){
-    float ang = atan2(y_pos,x_pos)-(90*d2r);
-    float hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
+    pouring pour;
+    q.ang = atan2(y_pos,x_pos)-(90*q.d2r);
+    q.hyp = sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)));
 
-    float ang2 = atan2(0.1,hyp);
-    float full_ang = ang + ang2 + (90*d2r);
-    float hyp2 = sqrt((0.1*0.1)+(hyp*hyp));
+    q.ang2 = atan2(0.1,q.hyp);
+    float full_ang = q.ang + q.ang2 + (90*q.d2r);
+    float hyp2 = sqrt((0.1*0.1)+(q.hyp*q.hyp));
 
-    pour_x = hyp2 * cos(full_ang);
-    pour_y = hyp2 * sin(full_ang);
-    pour_z = z_pos + 0.1;
+    pour.x = hyp2 * cos(full_ang);
+    pour.y = hyp2 * sin(full_ang);
+    pour.z = z_pos + 0.1;
 
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
 
     orientGraspHorizontal(x_pos, y_pos);
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
 
     ros::Duration(5).sleep();
 
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(pour_x, pour_y, pour_z, q_x, q_y, q_z, q_w);
+    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
   }
 
   void linearRetract(float x_pos, float y_pos, float z_pos){
-    float ang = atan2(y_pos,x_pos);
-    float hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
+    retract retr;
+    q.ang = atan2(y_pos,x_pos);
+    q.hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
 
-    retr_x = hyp * cos(ang);
-    retr_y = hyp * sin(ang);
-    retr_z = z_pos+0.1;
+    retr.x = q.hyp * cos(q.ang);
+    retr.y = q.hyp * sin(q.ang);
+    retr.z = z_pos+0.1;
 
-    cartesianPlan(retr_x, retr_y, retr_z, q_x, q_y, q_z, q_w);
+    cartesianPlan(retr.x, retr.y, retr.z, q.x, q.y, q.z, q.w);
   }
 
   void closeGripper(){
@@ -465,19 +458,19 @@ class JacoControl{
   void pickObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     ros::Duration(2).sleep();
-    cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
+    cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     ros::Duration(5).sleep();
     closeGripper();
     ros::Duration(5).sleep();
     attachObject(obj_id);
     ros::Duration(5).sleep();
-    cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
+    cartesianPlan(x_pos, y_pos, z_pos+0.15, q.x, q.y, q.z, q.w);
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(x_pos, y_pos, z_pos+0.15, q_x, q_y, q_z, q_w);
-    cartesianPlan(x_pos, y_pos, z_pos, q_x, q_y, q_z, q_w);
+    cartesianPlan(x_pos, y_pos, z_pos+0.15, q.x, q.y, q.z, q.w);
+    cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     openGripper();
     detachObject(obj_id);
     linearRetract(x_pos, y_pos, z_pos);
@@ -578,7 +571,7 @@ class JacoControl{
     clearConstraints();
   }
   */
-  int menu(){
+ int menu(){
      ROS_INFO("Choose the task that you want to perform");
      ROS_INFO("Possible options:");
      ROS_INFO("1. Grasp an empty cup");
@@ -634,6 +627,89 @@ class JacoControl{
    }
    */
  }
+ int menu1(){
+   while(ros::ok){
+   int choice;
+   int option;
+   int object;
+
+   simulateUser();
+   ros::Duration(2).sleep();
+   //Spawn Bottle
+   createObject("Cylinder", 1, b.x, b.y, b.z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+   ros::Duration(2).sleep();
+   //Spawn Cup
+   createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+   ros::Duration(2).sleep();
+   moveSleep();
+
+   ROS_INFO("Choose task:");
+   ROS_INFO("1. Pick");
+   ROS_INFO("2. Pour");
+   ROS_INFO("0. Exit");
+   std::cin >> choice;
+
+   if(choice==1){
+     ROS_INFO("Choose object:");
+     ROS_INFO("1. Bottle");
+     ROS_INFO("2. Cup");
+     ROS_INFO("0. Exit");
+     std::cin >> object;
+
+     if(object == 1){
+       //JC.pick(1);
+       orientGraspVertical(b.x, b.y);
+       cartesianPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
+     }
+
+       else if(object == 2){
+         //  JC.pick(2);
+         orientGraspVertical(c.x, c.y);
+         cartesianPlan(c.x, c.y, c.z, q.x, q.y, q.z, q.w);
+       }
+
+       else if(object == 0){
+         ROS_INFO("Exiting");
+         ros::shutdown();
+         return 0;
+       }
+
+       else{
+         ROS_INFO("Unrecognized object");
+       }
+     ROS_INFO("Put down?");
+     ROS_INFO("Enter 1 to place");
+     ROS_INFO("Enter 0 to exit");
+     std::cin >> option;
+     if(option == 1 && object == 1){
+       place(b.x, b.y, b.z, object);
+
+     }
+     else if(option == 1 && object == 2){
+       place(c.x, c.y, c.z, object);
+     }
+     else if (option == 0){
+       ROS_INFO("Exiting");
+       ros::shutdown();
+       return 0;
+     }
+     else{
+       ROS_INFO("Not a valid input, try again");
+     }
+   }
+
+   else if(choice==2){
+     pour();
+     ros::shutdown();
+     return 0;
+   }
+   else if(choice==0){
+     ROS_INFO("Exiting");
+     ros::shutdown();
+     return 0;
+   }
+ }
+ }
 };
 
 int main(int argc, char** argv)
@@ -643,100 +719,8 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-  int choice;
-  int place;
-  int object;
-
   JacoControl JC;
-    while(ros::ok){
-    JC.simulateUser();
-    ros::Duration(2).sleep();
-    //Spawn Bottle
-    JC.createObject("Cylinder", 1, b.x, b.y, b.z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-    //Spawn Cup
-    JC.createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
-    ros::Duration(2).sleep();
-    JC.moveSleep();
-
-    ROS_INFO("Choose task:");
-    ROS_INFO("1. Pick");
-    ROS_INFO("2. Pour");
-    ROS_INFO("0. Exit");
-    std::cin >> choice;
-
-    if(choice==1){
-      ROS_INFO("Choose object:");
-      ROS_INFO("1. Bottle");
-      ROS_INFO("2. Cup");
-      ROS_INFO("0. Exit");
-      std::cin >> object;
-
-      if(object == 1){
-        //JC.pick(1);
-        JC.orientGraspVertical(b.x, b.y);
-        JC.cartesianPlan(b.x, b.y, b.z, q_x, q_y, q_z, q_w);
-      }
-
-        else if(object == 2){
-          //  JC.pick(2);
-          JC.orientGraspVertical(c.x, c.y);
-          JC.cartesianPlan(c.x, c.y, c.z, q_x, q_y, q_z, q_w);
-        }
-
-        else if(object == 0){
-          ROS_INFO("Exiting");
-          ros::shutdown();
-          return 0;
-        }
-
-        else{
-          ROS_INFO("Unrecognized object");
-        }
-      ROS_INFO("Put down?");
-      ROS_INFO("Enter 1 to place");
-      ROS_INFO("Enter 0 to exit");
-      std::cin >> place;
-      if(place == 1 && object == 1){
-        JC.place(b.x, b.y, b.z, object);
-
-      }
-      else if(place == 1 && object == 2){
-        JC.place(c.x, c.y, c.z, object);
-      }
-      else if (place == 0){
-        ROS_INFO("Exiting");
-        ros::shutdown();
-        return 0;
-      }
-      else{
-        ROS_INFO("Not a valid input, try again");
-      }
-    }
-
-    else if(choice==2){
-      JC.pour();
-      ros::shutdown();
-      return 0;
-    }
-    else if(choice==0){
-      ROS_INFO("Exiting");
-      ros::shutdown();
-      return 0;
-    }
-  }
-
-  //JC.menu();
-//  JC.createObject("Cylinder", 1, b_x, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
-//  ros::Duration(2).sleep();
-
-//  JC.pickObject(b_x, b_y, b_z);
-
-
-  //JC.moveSleep();
-  //JC.cartesianPlan("arm", 0.3, 0.3, 0.3, 0, 0, 0, 1);
-//  ros::Duration(10).sleep();
-
+  JC.menu1();
 
   ros::shutdown();
   return 0;
