@@ -630,12 +630,7 @@ class JacoControl{
    */
  }
 
- int menu1(){
-   while(ros::ok){
-   int choice;
-   int option;
-   int object;
-
+ void simulateObjects(){
    simulateUser();
    ros::Duration(2).sleep();
    //Spawn Bottle
@@ -644,12 +639,20 @@ class JacoControl{
    //Spawn Cup
    createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
    ros::Duration(2).sleep();
+ }
+
+ int menu1(){
+   while(ros::ok){
+   int choice;
+   int option;
+   int object;
+
    moveSleep();
 
    ROS_INFO("Choose task:");
    ROS_INFO("1. Pick");
    ROS_INFO("2. Pour");
-   ROS_INFO("0. Exit");
+   ROS_INFO("0. Power Off");
    std::cin >> choice;
 
    if(choice==1){
@@ -663,29 +666,29 @@ class JacoControl{
        orientGraspVertical(b.x, b.y);
        cartesianPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
        //Some gripper action
-       JC.attachObject(object);
+       attachObject(object);
        ros::Duration(2).sleep();
-       JC.cartesianPlan(b.x, b.y, b.z+0.15, q.x, q.y, q.z, q.w);
+       cartesianPlan(b.x, b.y, b.z+0.15, q.x, q.y, q.z, q.w);
      }
 
        else if(object == 2){
          orientGraspVertical(c.x, c.y);
          cartesianPlan(c.x, c.y, c.z, q.x, q.y, q.z, q.w);
          //Some gripper action
-         JC.attachObject(object);
+         attachObject(object);
          ros::Duration(2).sleep();
-         JC.cartesianPlan(c.x, c.y, c.z+0.15, q.x, q.y, q.z, q.w);
+         cartesianPlan(c.x, c.y, c.z+0.15, q.x, q.y, q.z, q.w);
        }
 
        else if(object == 0){
-         ROS_INFO("Exiting");
+         ROS_INFO("Power: Off");
        }
 
        else{
          ROS_INFO("Unrecognized object, please try again");
          choice = 1;
        }
-     
+
      ROS_INFO("Enter 1 to place");
      std::cin >> option;
      if(option == 1 && object == 1){
@@ -703,15 +706,13 @@ class JacoControl{
 
    else if(choice==2){
      pour();
-     ros::shutdown();
-     return 0;
    }
    else if(choice==0){
      ROS_INFO("Exiting");
      ros::shutdown();
      return 0;
    }
- }
+  }
  }
 };
 
@@ -723,8 +724,10 @@ int main(int argc, char** argv)
   spinner.start();
 
   JacoControl JC;
+  JC.simulateObjects();
   JC.menu1();
 
   ros::spin();
+  ros::shutdown();
   return 0;
 }
