@@ -604,8 +604,13 @@ int main(int argc, char** argv)
   spinner.start();
 
   JacoControl JC;
-  JC.menu();
+  //JC.menu();
+  JC.createObject("Cylinder", 1, 0.1, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  JC.createObject("Box", 2, 0.2, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  JC.createObject("Sphere", 3, 0.3, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
+  JC.createObject("Cone", 4, 0.4, b_y, b_z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
 
+  
   //JC.moveSleep();
   //JC.cartesianPlan("arm", 0.3, 0.3, 0.3, 0, 0, 0, 1);
 //  ros::Duration(10).sleep();
