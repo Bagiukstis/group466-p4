@@ -75,9 +75,8 @@ class JacoControl{
       move_group.move();
     }
 
-  void jointPlan(std::string movement_group, float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
-    static const std::string PLANNING_GROUP = movement_group;
-
+  void jointPlan(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
+    static const std::string PLANNING_GROUP = "arm";
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
@@ -136,6 +135,8 @@ class JacoControl{
     double fraction = move_group.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
 
     moveit::planning_interface::MoveGroupInterface::Plan planCartesian;
+
+    move_group.allowReplanning(true);
 
     planCartesian.trajectory_= trajectory;
 
@@ -337,8 +338,7 @@ class JacoControl{
   }
 
   void gripperConstraints(float x_ori, float y_ori, float z_ori, float w_ori){
-    static const std::string PLANNING_GROUP = "arm";
-
+    static const std::string PLANNING_GROUP = "gripper";
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
@@ -351,13 +351,14 @@ class JacoControl{
     ocm.orientation.y = y_ori;
     ocm.orientation.z = z_ori;
     ocm.orientation.w = w_ori;
+    ocm.absolute_x_axis_tolerance = 0.1;
+    ocm.absolute_y_axis_tolerance = 0.1;
+    ocm.absolute_z_axis_tolerance = 0.1;
     ocm.weight = 1.0;
 
     moveit_msgs::Constraints constraints;
     constraints.orientation_constraints.push_back(ocm);
     move_group.setPathConstraints(constraints);
-
-    //move_group.setPlanningTime(10.0);
   }
 
   void clearConstraints(){
@@ -438,13 +439,25 @@ class JacoControl{
   void linearRetract(float x_pos, float y_pos, float z_pos){
     retract retr;
     q.ang = atan2(y_pos,x_pos);
-    q.hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.2);
+    q.hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.15);
 
     retr.x = q.hyp * cos(q.ang);
     retr.y = q.hyp * sin(q.ang);
     retr.z = z_pos+0.1;
 
     cartesianPlan(retr.x, retr.y, retr.z, q.x, q.y, q.z, q.w);
+  }
+
+  void linearApproach(float x_pos, float y_pos, float z_pos){
+    approach appr;
+    q.ang = atan2(y_pos,x_pos);
+    q.hyp = (sqrt((abs(x_pos)*abs(x_pos))+(abs(y_pos)*abs(y_pos)))-0.15);
+
+    appr.y = q.hyp * sin(q.ang);
+    appr.x = q.hyp * cos(q.ang);
+    appr.z = z_pos+0.1;
+
+    jointPlan(appr.x, appr.y, appr.z, q.x, q.y, q.z, q.w);
   }
 
   void closeGripper(){
@@ -459,19 +472,19 @@ class JacoControl{
 
   void pickObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
-    ros::Duration(2).sleep();
+    linearApproach(x_pos, y_pos, z_pos);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     ros::Duration(5).sleep();
     closeGripper();
     ros::Duration(5).sleep();
     attachObject(obj_id);
     ros::Duration(5).sleep();
-    cartesianPlan(x_pos, y_pos, z_pos+0.15, q.x, q.y, q.z, q.w);
+    cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(x_pos, y_pos, z_pos+0.15, q.x, q.y, q.z, q.w);
+    cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     openGripper();
     detachObject(obj_id);
@@ -481,8 +494,9 @@ class JacoControl{
   void simulateUser(){
     createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
-    createObject("Box", 5, -0.7, 0, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
+    //createObject("Box", 5, -0.85, -0.25, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
   }
+
 
   void pour(){
     moveSleep();
@@ -571,7 +585,6 @@ class JacoControl{
      std::cin >> option;
      if(option == 1 && object == 1){
        place(b.x, b.y, b.z, object);
-
      }
      else if(option == 1 && object == 2){
        place(c.x, c.y, c.z, object);
