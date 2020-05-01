@@ -1,14 +1,14 @@
 #ifndef JACO_CONTROL
 #define JACO_CONTROL
 struct bottle {
-  float x = -0.5;
-  float y = -0.5;
-  float z = 0.5;
+  float x = -0.6;
+  float y = -0.4;
+  float z = 0.4;
 };
 struct cup{
-  float x = -0.6;
-  float y = 0.3;
-  float z = 0.6;
+  float x = -0.7;
+  float y = 0.1;
+  float z = 0.35;
 };
 struct quaternions{
   float w;
@@ -39,4 +39,10 @@ struct retract{
   float y;
   float z;
 };
+struct approach{
+  float x;
+  float y;
+  float z;
+};
+
 #endif
