@@ -255,8 +255,6 @@ class JacoControl{
     std::vector<moveit_msgs::CollisionObject> collision_objects;
     collision_objects.push_back(collision_object);
 
-    ROS_INFO("Add an object into the world!");
-
     planning_scene_interface.addCollisionObjects(collision_objects);
 
     ros::Duration(0.5).sleep();
@@ -484,15 +482,17 @@ class JacoControl{
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     closeGripper();
     attachObject(obj_id);
+    gripperConstraints(q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
+    clearConstraints();
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     gripperConstraints(q.x, q.y, q.z, q.w);
-    jointPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
-    clearConstraints();
+    jointPlanWithConstraint(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
+    clearConstraints();
     openGripper();
     detachObject(obj_id);
     linearRetract(x_pos, y_pos, z_pos);
