@@ -46,35 +46,6 @@ class JacoControl{
       move_group.move();
     }
 
-  void moveHome(){
-      static const std::string PLANNING_GROUP = "arm";
-
-      moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
-      moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-
-      const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-
-      moveit::planning_interface::MoveGroupInterface::Plan planHome;
-      moveit::core::RobotStatePtr current_state = move_group.getCurrentState();
-
-      std::vector<double> joint_group_positions;
-      current_state->copyJointGroupPositions(joint_model_group, joint_group_positions);
-
-      joint_group_positions[0] = 0 * q.d2r;
-      joint_group_positions[1] = 180 * q.d2r;
-      joint_group_positions[2] = 0 * q.d2r;
-      joint_group_positions[3] = 90 * q.d2r;
-      joint_group_positions[4] = 0 * q.d2r;
-      joint_group_positions[5] = 180 * q.d2r;
-      joint_group_positions[6] = 0 * q.d2r;
-      move_group.setJointValueTarget(joint_group_positions);
-
-      bool success = (move_group.plan(planHome) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-      //EXECUTE TRAJECTORY
-      move_group.move();
-    }
-
   void jointPlan(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = "arm";
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
@@ -108,7 +79,7 @@ class JacoControl{
 
     const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
-    move_group.setPlanningTime(15.0);
+    move_group.setPlanningTime(10.0);
 
     //GOAL POSITION
     geometry_msgs::Pose goal_pose;
@@ -124,6 +95,8 @@ class JacoControl{
     moveit::planning_interface::MoveGroupInterface::Plan planJoint;
 
     bool success = (move_group.plan(planJoint) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+    ros::Duration(10).sleep();
 
     //EXECUTE TRAJECTORY
     move_group.move();
@@ -165,9 +138,9 @@ class JacoControl{
 
     moveit::planning_interface::MoveGroupInterface::Plan planCartesian;
 
-    //move_group.allowReplanning(true);
-
     planCartesian.trajectory_= trajectory;
+
+    ros::Duration(10).sleep();
 
     move_group.execute(planCartesian);
   }
@@ -467,6 +440,8 @@ class JacoControl{
 
     orientGraspVertical(x_pos, y_pos);
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    ros::Duration(1).sleep();
+    cartesianPlan(pour.x, pour.y, pour.z+0.1, q.x, q.y, q.z, q.w);
   }
 
   void linearRetract(float x_pos, float y_pos, float z_pos){
