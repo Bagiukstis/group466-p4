@@ -101,6 +101,34 @@ class JacoControl{
     move_group.move();
   }
 
+  void jointPlanWithConstraint(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
+    static const std::string PLANNING_GROUP = "arm";
+    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    const robot_state::JointModelGroup* joint_model_group = move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
+    move_group.setPlanningTime(15.0);
+
+    //GOAL POSITION
+    geometry_msgs::Pose goal_pose;
+    goal_pose.orientation.x = x_ori;
+    goal_pose.orientation.y = y_ori;
+    goal_pose.orientation.z = z_ori;
+    goal_pose.orientation.w = w_ori;
+    goal_pose.position.x = x_pos;
+    goal_pose.position.y = y_pos;
+    goal_pose.position.z = z_pos;
+    move_group.setPoseTarget(goal_pose);
+
+    moveit::planning_interface::MoveGroupInterface::Plan planJoint;
+
+    bool success = (move_group.plan(planJoint) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+    //EXECUTE TRAJECTORY
+    move_group.move();
+  }
+
   void cartesianPlan(float x_pos, float y_pos, float z_pos, float x_ori, float y_ori, float z_ori, float w_ori){
     static const std::string PLANNING_GROUP = "arm";
 
@@ -128,7 +156,7 @@ class JacoControl{
 
     //SET VELOCITY
     move_group.setMaxVelocityScalingFactor(1);
-    move_group.setPlanningTime(7.0);
+    move_group.setPlanningTime(10.0);
 
     moveit_msgs::RobotTrajectory trajectory;
     const double jump_threshold = 0.0;
@@ -258,7 +286,7 @@ class JacoControl{
 
     planning_scene_interface.addCollisionObjects(collision_objects);
 
-    sleep(0.5);
+    ros::Duration(0.5).sleep();
     //move_group.setPlanningTime(10.0);
   }
 
@@ -427,8 +455,10 @@ class JacoControl{
     jointPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
 
     gripperConstraints(q.x, q.y, q.z, q.w);
-    jointPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    jointPlanWithConstraint(pour.x, pour.y, pour.z+0.1, q.x, q.y, q.z, q.w);
     clearConstraints();
+    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    ros::Duration(1).sleep();
 
     orientGraspHorizontal(x_pos, y_pos);
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
@@ -496,7 +526,7 @@ class JacoControl{
   void simulateUser(){
     createObject("Sphere", 3, 0.45, -0.25, 0.55, 0.15, 0.1, 0.035, 0, 0, 0, 1);
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
-    //createObject("Box", 5, -0.85, -0.25, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
+    createObject("Box", 5, -0.85, -0.25, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
   }
 
 
