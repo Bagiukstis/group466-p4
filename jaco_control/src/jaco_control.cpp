@@ -128,6 +128,7 @@ class JacoControl{
 
     //SET VELOCITY
     move_group.setMaxVelocityScalingFactor(1);
+    move_group.setPlanningTime(7.0);
 
     moveit_msgs::RobotTrajectory trajectory;
     const double jump_threshold = 0.0;
@@ -136,11 +137,9 @@ class JacoControl{
 
     moveit::planning_interface::MoveGroupInterface::Plan planCartesian;
 
-    move_group.allowReplanning(true);
+    //move_group.allowReplanning(true);
 
     planCartesian.trajectory_= trajectory;
-
-    ros::Duration(5).sleep();
 
     move_group.execute(planCartesian);
   }
@@ -425,7 +424,11 @@ class JacoControl{
     pour.z = z_pos + 0.1;
 
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    jointPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
+
+    gripperConstraints(q.x, q.y, q.z, q.w);
+    jointPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    clearConstraints();
 
     orientGraspHorizontal(x_pos, y_pos);
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
@@ -474,17 +477,16 @@ class JacoControl{
     orientGraspVertical(x_pos, y_pos);
     linearApproach(x_pos, y_pos, z_pos);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
-    ros::Duration(5).sleep();
     closeGripper();
-    ros::Duration(5).sleep();
     attachObject(obj_id);
-    ros::Duration(5).sleep();
     cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
-    cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
+    gripperConstraints(q.x, q.y, q.z, q.w);
+    jointPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
+    clearConstraints();
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     openGripper();
     detachObject(obj_id);
