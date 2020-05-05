@@ -426,9 +426,10 @@ class JacoControl{
     jointPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
 
     gripperConstraints(q.x, q.y, q.z, q.w);
+    ros::Duration(1).sleep();
     jointPlanWithConstraint(pour.x, pour.y, pour.z+0.1, q.x, q.y, q.z, q.w);
-    clearConstraints();
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
+    clearConstraints();
     ros::Duration(1).sleep();
 
     orientGraspHorizontal(x_pos, y_pos);
@@ -483,16 +484,20 @@ class JacoControl{
     closeGripper();
     attachObject(obj_id);
     gripperConstraints(q.x, q.y, q.z, q.w);
+    ros::Duration(1).sleep();
     cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     clearConstraints();
+    ros::Duration(1).sleep();
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     gripperConstraints(q.x, q.y, q.z, q.w);
+    ros::Duration(1).sleep();
     jointPlanWithConstraint(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     clearConstraints();
+    ros::Duration(1).sleep();
     openGripper();
     detachObject(obj_id);
     linearRetract(x_pos, y_pos, z_pos);
