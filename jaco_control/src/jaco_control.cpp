@@ -16,6 +16,8 @@ class JacoControl{
   quaternions q;
   bottle b;
   cup c;
+  double execution_time;
+  ros::WallTime start_, end_;
   public:
 
   void moveSleep(){
@@ -508,10 +510,18 @@ class JacoControl{
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
     createObject("Box", 5, -0.85, -0.25, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
   }
-
+  void timer_start(){
+    start_ = ros::WallTime::now();
+  }
+  void timer_end(){
+    end_ = ros::WallTime::now();
+    execution_time = (end_ - start_).toNSec()*1e-6;
+    ROS_INFO_STREAM("Task execution time (ms): " << execution_time);
+  }
 
   void pour(){
     moveSleep();
+    timer_start();
     ros::Duration(2).sleep();
 
     pickObject(b.x, b.y, b.z, 1);
@@ -521,9 +531,11 @@ class JacoControl{
     placeObject(b.x, b.y, b.z, 1);
 
     moveSleep();
+    timer_end();
   }
 
   void pick(int obj_id){
+    timer_start();
     if(obj_id == 1){
       pickObject(b.x, b.y, b.z, obj_id);
     }
@@ -533,13 +545,16 @@ class JacoControl{
     else{
       ROS_INFO("Unrecognized object");
     }
+    timer_end();
   }
 
 
   void place(float x_pos, float y_pos, float z_pos, int obj_id){
+    timer_start();
     placeObject(x_pos, y_pos, z_pos, obj_id);
     linearRetract(x_pos, y_pos, z_pos);
     moveSleep();
+    timer_end();
   }
 
  void simulateObjects(){
