@@ -1,8 +1,19 @@
 #! /usr/bin/env python
 import rospy
 from geometry_msgs.msg import Point
+#from geometry_msgs.msg import PointStamped
 import numpy as np
 
+#def callback(data):
+#	rospy.loginfo(rospy.get_caller_id() + "Header %s", data.frame_id)
+#	rospy.loginfo(rospy.get_caller_id() + "x = %.3f", data.x)
+#	rospy.loginfo(rospy.get_caller_id() + "y = %.3f", data.y)
+#	rospy.loginfo(rospy.get_caller_id() + "z = %.3f", data.z)
+#def listener():
+#	rospy.init_node('listener')
+#	rospy.Subscriber("xxxx", PointStamped, callback)
+#	rospy.spin()
+#
 
 rospy.init_node('talker')
 pub = rospy.Publisher('chatter', Point, queue_size = 10)
@@ -20,9 +31,7 @@ def transformation(x, y, z):
 	A = np.array([[0.222, 0.335, -0.9162, 0.3607], [0.9750, -0.0760, 0.2088, -0.5391], [0, -0.9397, -0.3420, 0.3899], [0, 0, 0, 1]],dtype = np.float64)
 	Pc = np.array([[x],[y],[z], [1]],dtype = np.float64)
 	Dotp= A.dot(Pc)
-	#print(A)	
 	Final = np.round(Dotp, 3)
-	#Final1 = np.array(Final, dtype=float)
 
 	X_b = Final[0]
 	Y_b = Final[1]
@@ -49,6 +58,3 @@ while not rospy.is_shutdown():
 	pub.publish(pb)
 	pub.publish(pc)
 	rate.sleep()
-#print(X_b)
-#print(Y_b)
-#print(Z_b)
