@@ -9,7 +9,11 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <math.h>
 #include "global.h"
-
+#include <geometry_msgs/Point.h>
+//ros::WallTime start_, end_;
+float bobix;
+float bobiy;
+float bobiz;
 
 class JacoControl{
   private:
@@ -20,6 +24,14 @@ class JacoControl{
   ros::WallTime start_, end_;
   public:
 
+  void bottlepos(const geometry_msgs::Point::ConstPtr &msg){
+    //ROS_INFO("x = %.3f", msg->x);
+    //ROS_INFO("y = %.3f", msg->y);
+    //ROS_INFO("z = %.3f", msg->z);
+    b.x = msg->x;
+    b.y = msg->y;
+    b.z = msg->z;
+  }
   void moveSleep(){
       static const std::string PLANNING_GROUP = "arm";
 
@@ -428,10 +440,9 @@ class JacoControl{
     jointPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
 
     gripperConstraints(q.x, q.y, q.z, q.w);
-    ros::Duration(1).sleep();
     jointPlanWithConstraint(pour.x, pour.y, pour.z+0.1, q.x, q.y, q.z, q.w);
-    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
     clearConstraints();
+    cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
     ros::Duration(1).sleep();
 
     orientGraspHorizontal(x_pos, y_pos);
@@ -486,20 +497,16 @@ class JacoControl{
     closeGripper();
     attachObject(obj_id);
     gripperConstraints(q.x, q.y, q.z, q.w);
-    ros::Duration(1).sleep();
     cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     clearConstraints();
-    ros::Duration(1).sleep();
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     gripperConstraints(q.x, q.y, q.z, q.w);
-    ros::Duration(1).sleep();
     jointPlanWithConstraint(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     clearConstraints();
-    ros::Duration(1).sleep();
     openGripper();
     detachObject(obj_id);
     linearRetract(x_pos, y_pos, z_pos);
@@ -510,6 +517,7 @@ class JacoControl{
     createObject("Box", 4, 0.45, -0.25, 0.15, 0.18, 0.4, 0.48, 0, 0, 0, 1);
     createObject("Box", 5, -0.85, -0.25, 0.25, 0.75, 1.2, 0.05, 0, 0, 0, 1);
   }
+
   void timer_start(){
     start_ = ros::WallTime::now();
   }
@@ -518,18 +526,13 @@ class JacoControl{
     execution_time = (end_ - start_).toNSec()*1e-6;
     ROS_INFO_STREAM("Task execution time (ms): " << execution_time);
   }
-
   void pour(){
     moveSleep();
     timer_start();
     ros::Duration(2).sleep();
-
     pickObject(b.x, b.y, b.z, 1);
-
     pourBottleAt(c.x, c.y, c.z);
-
     placeObject(b.x, b.y, b.z, 1);
-
     moveSleep();
     timer_end();
   }
@@ -548,7 +551,6 @@ class JacoControl{
     timer_end();
   }
 
-
   void place(float x_pos, float y_pos, float z_pos, int obj_id){
     timer_start();
     placeObject(x_pos, y_pos, z_pos, obj_id);
@@ -564,7 +566,7 @@ class JacoControl{
    createObject("Cylinder", 1, b.x, b.y, b.z, 0.2, 0.035, 0.035, 0, 0, 0, 1);
    ros::Duration(2).sleep();
    //Spawn Cup
-   createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
+  createObject("Cylinder", 2, c.x, c.y, c.z, 0.1, 0.05, 0.05, 0, 0, 0, 1);
    ros::Duration(2).sleep();
  }
 
@@ -638,12 +640,13 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "jaco_control");
   ros::NodeHandle node_handle;
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
+//  ros::AsyncSpinner spinner(1);
+//  spinner.start();
 
   JacoControl JC;
+  ros::Subscriber sub = node_handle.subscribe("chatter",1000,&JacoControl::bottlepos, &JC);
   JC.simulateObjects();
-  JC.menu1();
+  //JC.menu1();
 
   ros::spin();
   ros::shutdown();
