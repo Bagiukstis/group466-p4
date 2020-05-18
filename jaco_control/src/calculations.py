@@ -31,22 +31,20 @@ def callback(message):
 		return X, Y, Z
 	X_b, Y_b, Z_b = transformation(Xb, Yb, Zb)
 	X_c, Y_c, Z_c = transformation(Xc, Yc, Zc)
-	pb = PointStamped()
-	pb.header.frame_id = Headb
-	pb.point.x = X_b
-	pb.point.y = Y_b
-	pb.point.z = Z_b
-	
-	pc = PointStamped()
-	pc.header.frame_id = Headc
-	pc.point.x = X_c
-	pc.point.y = Y_c
-	pc.point.z = Z_c
+	pb.PointStamped()
+	if message.header.frame_id == "Bottle":
+		pb.header.frame_id = "Bottle"
+		pb.point.x = X_b
+		pb.point.y = Y_b
+		pb.point.z = Z_b
+	elif message.header.frame_id == "Mug":
+		pb.header.frame_id = "Mug"
+		pb.point.x = X_c
+		pb.point.y = Y_c
+		pb.point.z = Z_c
 	while not rospy.is_shutdown():
 		pub.publish(pb)
-		pub.publish(pc)
 		rate.sleep()
-
 
 if __name__ == '__main__':
 	rospy.init_node('listenernpublisher')
