@@ -22,11 +22,11 @@ class JacoControl{
   public:
 void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
   // Uncomment to check if we are printing any positions
-  /*  ROS_INFO("%s", msg->header.frame_id.c_str()); // c_str - string converter
+    /*ROS_INFO("%s", msg->header.frame_id.c_str()); // c_str - string converter
     ROS_INFO("x = %.3f", msg->point.x);
     ROS_INFO("y = %.3f", msg->point.y);
-    ROS_INFO("z = %.3f", msg->point.z);
-    */
+    ROS_INFO("z = %.3f", msg->point.z);*/
+
    if(msg->header.frame_id == "Bottle"){
      b.x = msg->point.x;
      b.y = msg->point.y;
@@ -34,7 +34,7 @@ void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
    }
    else if(msg->header.frame_id == "Mug"){
      c.x = msg->point.x;
-     c.y = msg->point.y;
+     c.y = msg->point.y+0.2;
      c.z = msg->point.z;
    }
   }
@@ -646,15 +646,15 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "jaco_control");
   ros::NodeHandle node_handle;
-//  ros::AsyncSpinner spinner(1);
-//  spinner.start();
+  ros::AsyncSpinner spinner(1);
+  spinner.start();
 
   JacoControl JC;
   ros::Subscriber sub = node_handle.subscribe("chatter",1000,&JacoControl::bottlepos, &JC);
   JC.simulateObjects();
-  //JC.menu1();
+  JC.menu1();
 
-  ros::spin();
+  //ros::spin();
   ros::shutdown();
   return 0;
 }
