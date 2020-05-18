@@ -21,28 +21,25 @@ def callback(message):
 	rospy.loginfo(rospy.get_caller_id() + "y = %.3f", message.point.y)
 	rospy.loginfo(rospy.get_caller_id() + "z = %.3f", message.point.z)
 	if message.header.frame_id == "Bottle":
-		Headb = message.header.frame_id
-		Xb = message.point.x
-		Yb = message.point.y
-		Zb = message.point.z
+		X = message.point.x
+		Y = message.point.y
+		Z = message.point.z
 	elif message.header.frame_id == "Mug":
-		Headc= message.header.frame_id
-		Xc = message.point.x
-		Yc = message.point.y
-		Zc = message.point.z
-	X_b, Y_b, Z_b = transformation(Xb, Yb, Zb)
-	X_c, Y_c, Z_c = transformation(Xc, Yc, Zc)
+		X = message.point.x
+		Y = message.point.y
+		Z = message.point.z
+	X, Y, Z = transformation(X, Y, Z)
 	pb = PointStamped()
 	if message.header.frame_id == "Bottle":
 		pb.header.frame_id = "Bottle"
-		pb.point.x = X_b
-		pb.point.y = Y_b
-		pb.point.z = Z_b
+		pb.point.x = X
+		pb.point.y = Y
+		pb.point.z = Z
 	elif message.header.frame_id == "Mug":
 		pb.header.frame_id = "Mug"
-		pb.point.x = X_c
-		pb.point.y = Y_c
-		pb.point.z = Z_c
+		pb.point.x = X
+		pb.point.y = Y
+		pb.point.z = Z
 	rate = rospy.Rate(0.5)
 	while not rospy.is_shutdown():
 		pub.publish(pb)
