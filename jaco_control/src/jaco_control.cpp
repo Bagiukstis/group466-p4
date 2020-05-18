@@ -9,11 +9,8 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <math.h>
 #include "global.h"
-#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
 //ros::WallTime start_, end_;
-float bobix;
-float bobiy;
-float bobiz;
 
 class JacoControl{
   private:
@@ -23,14 +20,23 @@ class JacoControl{
   double execution_time;
   ros::WallTime start_, end_;
   public:
-
-  void bottlepos(const geometry_msgs::Point::ConstPtr &msg){
-    //ROS_INFO("x = %.3f", msg->x);
-    //ROS_INFO("y = %.3f", msg->y);
-    //ROS_INFO("z = %.3f", msg->z);
-    b.x = msg->x;
-    b.y = msg->y;
-    b.z = msg->z;
+void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
+  // Uncomment to check if we are printing any positions
+  /*  ROS_INFO("%s", msg->header.frame_id.c_str()); // c_str - string converter
+    ROS_INFO("x = %.3f", msg->point.x);
+    ROS_INFO("y = %.3f", msg->point.y);
+    ROS_INFO("z = %.3f", msg->point.z);
+    */
+   if(msg->header.frame_id == "Bottle"){
+     b.x = msg->point.x;
+     b.y = msg->point.y;
+     b.z = msg->point.z;
+   }
+   else if(msg->header.frame_id == "Mug"){
+     c.x = msg->point.x;
+     c.y = msg->point.y;
+     c.z = msg->point.z;
+   }
   }
   void moveSleep(){
       static const std::string PLANNING_GROUP = "arm";
