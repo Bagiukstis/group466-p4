@@ -443,7 +443,7 @@ void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
     pour.z = z_pos + 0.1;
 
     orientGraspVertical(x_pos, y_pos);
-    jointPlan(b.x, b.y, b.z, q.x, q.y, q.z, q.w);
+    jointPlan(b.x, b.y, b.z+0.2, q.x, q.y, q.z, q.w);
 
     gripperConstraints(q.x, q.y, q.z, q.w);
     jointPlanWithConstraint(pour.x, pour.y, pour.z+0.1, q.x, q.y, q.z, q.w);
@@ -454,7 +454,7 @@ void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
     orientGraspHorizontal(x_pos, y_pos);
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
 
-    ros::Duration(5).sleep();
+    ros::Duration(0.5).sleep();
 
     orientGraspVertical(x_pos, y_pos);
     cartesianPlan(pour.x, pour.y, pour.z, q.x, q.y, q.z, q.w);
@@ -503,14 +503,14 @@ void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
     closeGripper();
     attachObject(obj_id);
     gripperConstraints(q.x, q.y, q.z, q.w);
-    cartesianPlan(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
+    cartesianPlan(x_pos, y_pos, z_pos+0.2, q.x, q.y, q.z, q.w);
     clearConstraints();
   }
 
   void placeObject(float x_pos, float y_pos, float z_pos, int obj_id){
     orientGraspVertical(x_pos, y_pos);
     gripperConstraints(q.x, q.y, q.z, q.w);
-    jointPlanWithConstraint(x_pos, y_pos, z_pos+0.1, q.x, q.y, q.z, q.w);
+    jointPlanWithConstraint(x_pos, y_pos, z_pos+0.2, q.x, q.y, q.z, q.w);
     cartesianPlan(x_pos, y_pos, z_pos, q.x, q.y, q.z, q.w);
     clearConstraints();
     openGripper();
