@@ -10,20 +10,14 @@ def transformation(x, y, z):
 	Dotp= A.dot(Pc)
 	Final = np.round(Dotp, 3)
 
-	X = Final[0]-0.4
+	X = Final[0]-0.35
 	Y = Final[1]
-	Z = Final[2]+0.2
+	Z = Final[2]+0.25
 	return X, Y, Z
 
 def callback(message):
-	rospy.loginfo(rospy.get_caller_id() + "Header %s", message.header.frame_id)
-	rospy.loginfo(rospy.get_caller_id() + "x = %.3f", message.point.x)
-	rospy.loginfo(rospy.get_caller_id() + "y = %.3f", message.point.y)
-	rospy.loginfo(rospy.get_caller_id() + "z = %.3f", message.point.z)
-	X = message.point.x
-	Y = message.point.y
-	Z = message.point.z
-	X, Y, Z = transformation(X, Y, Z)
+	X, Y, Z = transformation(message.point.x, message.point.y, message.point.z)
+	rospy.loginfo(rospy.get_caller_id() + ": %s - x = %.3f, y = %.3f, z = %.3f", message.header.frame_id, X, Y, Z)
 	pb = PointStamped()
 
 	pb.header.frame_id = message.header.frame_id
@@ -36,7 +30,6 @@ def callback(message):
 
 
 if __name__ == '__main__':
-	#print(transformation(0.06705020368099213, -0.05685984343290329, 0.24646656215190887))
 	rospy.init_node('listenernpublisher')
 	pub = rospy.Publisher('chatter', PointStamped, queue_size = 10)
 	rospy.Subscriber("cv/object_coordinates", PointStamped, callback)
