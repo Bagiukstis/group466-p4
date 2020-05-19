@@ -33,8 +33,8 @@ void bottlepos(const geometry_msgs::PointStamped::ConstPtr &msg){
      b.z = msg->point.z;
    }
    else if(msg->header.frame_id == "Mug"){
-     c.x = msg->point.x;
-     c.y = msg->point.y+0.2;
+     c.x = msg->point.x - 0.02;
+     c.y = msg->point.y + 0.2;
      c.z = msg->point.z;
    }
   }
